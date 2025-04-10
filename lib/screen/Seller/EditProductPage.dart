@@ -1,10 +1,11 @@
 import 'dart:io';
-
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:firebase_storage/firebase_storage.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:mime/mime.dart';
+import 'package:path/path.dart' as path;
 
 class EditProductPage extends StatefulWidget {
   final String productId;
@@ -17,7 +18,7 @@ class EditProductPage extends StatefulWidget {
   }) : super(key: key);
 
   @override
-  _EditProductPageState createState() => _EditProductPageState();
+  State<EditProductPage> createState() => _EditProductPageState();
 }
 
 class _EditProductPageState extends State<EditProductPage> {
@@ -31,8 +32,12 @@ class _EditProductPageState extends State<EditProductPage> {
   List<String> existingImageUrls = [];
   List<XFile> newGalleryImages = [];
   List<String> newNetworkImageUrls = [];
+
+  String _selectedUnit = 'Kg';
   bool _isLoading = false;
-  String _selectedUnit = 'Kg'; // default unit
+  Map<String, double> uploadProgress = {};
+
+  final supabase = Supabase.instance.client;
 
   @override
   void initState() {
@@ -40,34 +45,72 @@ class _EditProductPageState extends State<EditProductPage> {
     _nameController.text = widget.existingData['name'] ?? '';
     _priceController.text = widget.existingData['price'].toString();
     _descriptionController.text = widget.existingData['description'] ?? '';
-    _quantityController.text = widget.existingData['quantity']?.toString() ?? '0.0';
-    _selectedUnit = widget.existingData['unit'] ?? 'Kg'; // pre-fill unit if available
+    _quantityController.text = widget.existingData['quantity'].toString();
+    _selectedUnit = widget.existingData['unit'] ?? 'Kg';
 
     if (widget.existingData['imageUrls'] != null) {
       existingImageUrls = List<String>.from(widget.existingData['imageUrls']);
     }
   }
 
-  // To pick image from gallery ->bs
   Future<void> _pickGalleryImages() async {
-    final ImagePicker picker = ImagePicker();
-    final List<XFile> images = await picker.pickMultiImage();
-
+    final picker = ImagePicker();
+    final images = await picker.pickMultiImage();
     if (images.isNotEmpty) {
-      setState(() {
-        newGalleryImages.addAll(images);
-      });
+      setState(() => newGalleryImages.addAll(images));
     }
   }
 
   void _addNetworkImageUrl() {
-    if (_networkImageUrlController.text.trim().isNotEmpty) {
+    final url = _networkImageUrlController.text.trim();
+    if (url.isNotEmpty) {
       setState(() {
-        newNetworkImageUrls.add(_networkImageUrlController.text.trim());
+        newNetworkImageUrls.add(url);
         _networkImageUrlController.clear();
       });
     }
   }
+
+  Future<String> _uploadToSupabase(XFile image) async {
+    final bytes = await image.readAsBytes();
+    final fileName =
+        '${DateTime.now().millisecondsSinceEpoch}${path.extension(image.name)}';
+    final storagePath = 'grains/$fileName';
+
+    final fileOptions = FileOptions(cacheControl: '3600', upsert: false);
+    final fileMime = lookupMimeType(image.name);
+
+    final upload = supabase.storage
+        .from('user-images')
+        .uploadBinary(
+          storagePath,
+          bytes,
+          fileOptions: fileOptions,
+        );
+
+    await upload;
+
+    return supabase.storage.from('user-images').getPublicUrl(storagePath);
+  }
+
+  Future<void> _deleteSupabaseImage(String imageUrl) async {
+    try {
+      final uri = Uri.parse(imageUrl);
+      final segments = uri.pathSegments;
+
+      final index = segments.indexOf('user-images');
+      if (index != -1 && segments.length > index + 1) {
+        final filePath = segments.sublist(index + 1).join('/');
+        await supabase.storage.from('user-images').remove([filePath]);
+        print("Deleted from Supabase: $filePath");
+      } else {
+        print("Could not parse file path from URL: $imageUrl");
+      }
+    } catch (e) {
+      print("Error deleting image from Supabase: $e");
+    }
+  }
+
 
   Future<void> _saveChanges() async {
     if (_nameController.text.isEmpty ||
@@ -80,24 +123,16 @@ class _EditProductPageState extends State<EditProductPage> {
     }
 
     try {
-      setState(() {
-        _isLoading = true;
-      });
-
-      List<String> uploadedImageUrls = [];
+      setState(() => _isLoading = true);
 
       // Upload new gallery images
+      List<String> uploadedImageUrls = [];
       for (var image in newGalleryImages) {
-        String fileName = DateTime.now().millisecondsSinceEpoch.toString();
-        Reference ref = FirebaseStorage.instance.ref().child(
-          'product_images/$fileName',
-        );
-        await ref.putFile(File(image.path));
-        String downloadUrl = await ref.getDownloadURL();
-        uploadedImageUrls.add(downloadUrl);
+        final publicUrl = await _uploadToSupabase(image);
+        uploadedImageUrls.add(publicUrl);
       }
 
-      List<String> finalImageUrls = [
+      final finalImageUrls = [
         ...existingImageUrls,
         ...uploadedImageUrls,
         ...newNetworkImageUrls,
@@ -111,22 +146,20 @@ class _EditProductPageState extends State<EditProductPage> {
             'price': double.tryParse(_priceController.text.trim()) ?? 0.0,
             'description': _descriptionController.text.trim(),
             'quantity': int.tryParse(_quantityController.text.trim()) ?? 0,
-
+            'unit': _selectedUnit,
             'imageUrls': finalImageUrls,
           });
 
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(SnackBar(content: Text("Grain updated successfully")));
+      ).showSnackBar(SnackBar(content: Text("Product updated successfully")));
       Navigator.pop(context);
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Failed to update: ${e.toString()}")),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text("Failed to update: $e")));
     } finally {
-      setState(() {
-        _isLoading = false;
-      });
+      setState(() => _isLoading = false);
     }
   }
 
@@ -134,252 +167,219 @@ class _EditProductPageState extends State<EditProductPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text("Edit Grain Details"),
-        backgroundColor: Color.fromARGB(
-                                    255,
-                                    47,
-                                    138,
-                                    47,
-                                  ),
+        title: Text("Edit Grain"),
+        backgroundColor: Color.fromARGB(255, 47, 138, 47),
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(20.0),
-        child: SingleChildScrollView(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              TextField(
-                controller: _nameController,
-                decoration: InputDecoration(
-                  labelText: "Grain Name",
-                  border: OutlineInputBorder(),
-                ),
-              ),
-              SizedBox(height: 15),
-              TextField(
-                controller: _priceController,
-                decoration: InputDecoration(
-                  labelText: "Grain Price",
-                  border: OutlineInputBorder(),
-                ),
-                keyboardType: TextInputType.numberWithOptions(decimal: true),
-              ),
-              SizedBox(height: 15),
-              TextField(
-                controller: _descriptionController,
-                decoration: InputDecoration(
-                  labelText: "Grain Description",
-                  border: OutlineInputBorder(),
-                ),
-                maxLines: 3,
-              ),
-              SizedBox(height: 15),
-              TextField(
-                controller: _quantityController,
-                decoration: InputDecoration(
-                  labelText: "Grain Quantity",
-                  border: OutlineInputBorder(),
-                  suffixIcon: DropdownButtonHideUnderline(
-                    child: DropdownButton<String>(
-                      value: _selectedUnit,
-                      items:
-                          ['Gram', 'Kg', 'Quintal','Pieces']
-                              .map(
-                                (unit) => DropdownMenuItem(
-                                  value: unit,
-                                  child: Text(unit),
-                                ),
-                              )
-                              .toList(),
-                      onChanged: (value) {
-                        setState(() {
-                          _selectedUnit = value!;
-                        });
-                      },
-                      icon: Icon(Icons.arrow_drop_down, color: Colors.grey),
+      body:
+          _isLoading
+              ? Center(child: CircularProgressIndicator())
+              : SingleChildScrollView(
+                padding: EdgeInsets.all(16),
+                child: Column(
+                  children: [
+                    TextField(
+                      controller: _nameController,
+                      decoration: InputDecoration(
+                        labelText: 'Grain Name',
+                        border: OutlineInputBorder(),
+                      ),
                     ),
-                  ),
-                ),
-                keyboardType: TextInputType.number,
-              ),
-              SizedBox(height: 20),
+                    SizedBox(height: 10),
+                    TextField(
+                      controller: _priceController,
+                      decoration: InputDecoration(
+                        labelText: 'Price',
+                        border: OutlineInputBorder(),
+                      ),
+                      keyboardType: TextInputType.numberWithOptions(
+                        decimal: true,
+                      ),
+                    ),
+                    SizedBox(height: 10),
+                    TextField(
+                      controller: _descriptionController,
+                      decoration: InputDecoration(
+                        labelText: 'Description',
+                        border: OutlineInputBorder(),
+                      ),
+                      maxLines: 3,
+                    ),
+                    SizedBox(height: 10),
+                    TextField(
+                      controller: _quantityController,
+                      decoration: InputDecoration(
+                        labelText: 'Quantity',
+                        border: OutlineInputBorder(),
+                        suffixIcon: DropdownButtonHideUnderline(
+                          child: DropdownButton<String>(
+                            value: _selectedUnit,
+                            items:
+                                ['Gram', 'Kg', 'Quintal', 'Pieces'].map((unit) {
+                                  return DropdownMenuItem(
+                                    value: unit,
+                                    child: Text(unit),
+                                  );
+                                }).toList(),
+                            onChanged:
+                                (val) => setState(() => _selectedUnit = val!),
+                          ),
+                        ),
+                      ),
+                      keyboardType: TextInputType.number,
+                    ),
+                    SizedBox(height: 20),
 
-              SizedBox(height: 20),
-              Text("Existing Images:"),
-              SizedBox(height: 10),
-              Wrap(
-                spacing: 10,
-                children:
-                    existingImageUrls
-                        .map(
-                          (url) => Stack(
-                            children: [
-                              Image.network(
-                                url,
-                                width: 80,
-                                height: 80,
-                                fit: BoxFit.cover,
-                              ),
-                              Positioned(
-                                right: 0,
-                                top: 0,
-                                child: GestureDetector(
-                                  onTap: () {
-                                    setState(() {
-                                      existingImageUrls.remove(url);
-                                    });
-                                  },
-                                  child: CircleAvatar(
-                                    radius: 10,
-                                    backgroundColor: Colors.red,
-                                    child: Icon(
-                                      Icons.close,
-                                      size: 14,
-                                      color: Colors.white,
+                    Text("Existing Images"),
+                    Wrap(
+                      spacing: 10,
+                      children:
+                          existingImageUrls.map((url) {
+                            return Stack(
+                              children: [
+                                Image.network(
+                                  url,
+                                  width: 80,
+                                  height: 80,
+                                  fit: BoxFit.cover,
+                                ),
+                                Positioned(
+                                  right: 0,
+                                  top: 0,
+                                  child: GestureDetector(
+                                    onTap: () async {
+                                      await _deleteSupabaseImage(url);
+                                      setState(
+                                        () => existingImageUrls.remove(url),
+                                      );
+                                    },
+                                    child: CircleAvatar(
+                                      radius: 10,
+                                      backgroundColor: Colors.red,
+                                      child: Icon(
+                                        Icons.close,
+                                        size: 14,
+                                        color: Colors.white,
+                                      ),
                                     ),
                                   ),
                                 ),
-                              ),
-                            ],
-                          ),
-                        )
-                        .toList(),
-              ),
-              SizedBox(height: 15),
-              ElevatedButton(
-                style: ButtonStyle(
-                  foregroundColor: WidgetStateProperty.all(
-                    Colors.white,
-                  ), // Text color
-                  backgroundColor: WidgetStateProperty.resolveWith<Color>((
-                    Set<WidgetState> states,
-                  ) {
-                    if (states.contains(WidgetState.pressed)) {
-                      return Color.fromARGB(
-                        255,
-                        47,
-                        138,
-                        47,
-                      ); // Color when pressed
-                    }
-                    return Color.fromARGB(255, 47, 138, 47); // Default color
-                  }),
-                  shadowColor: WidgetStateProperty.all(Colors.black),
-                  elevation: WidgetStateProperty.all(8), // Elevation
-                  padding: WidgetStateProperty.all(
-                    EdgeInsets.symmetric(horizontal: 25, vertical: 15),
-                  ),
-                  shape: WidgetStateProperty.all(
-                    RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(15),
+                              ],
+                            );
+                          }).toList(),
                     ),
-                  ),
-                ),
-                onPressed: _pickGalleryImages,
-                child: Text("Pick Images from Gallery"),
-              ),
-              SizedBox(height: 15),
-              TextField(
-                controller: _networkImageUrlController,
-                decoration: InputDecoration(
-                  labelText: "Add Network Image URL",
-                  suffixIcon: IconButton(
-                    icon: Icon(Icons.add),
-                    onPressed: _addNetworkImageUrl,
-                  ),
-                  border: OutlineInputBorder(),
-                ),
-              ),
-              SizedBox(height: 10),
-              // Text("Network Images to Add:"),
-              Wrap(
-                spacing: 10,
-                children:
-                    newNetworkImageUrls
-                        .map(
-                          (url) => Stack(
-                            children: [
-                              Image.network(
-                                url,
-                                width: 80,
-                                height: 80,
-                                fit: BoxFit.cover,
-                              ),
-                              Positioned(
-                                right: 0,
-                                top: 0,
-                                child: GestureDetector(
-                                  onTap: () {
-                                    setState(() {
-                                      newNetworkImageUrls.remove(url);
-                                    });
-                                  },
-                                  child: CircleAvatar(
-                                    radius: 10,
-                                    backgroundColor: Colors.red,
-                                    child: Icon(
+                    SizedBox(height: 15),
+                    ElevatedButton(
+                      onPressed: _pickGalleryImages,
+                      child: Text("Pick Images from Gallery"),
+                    ),
+                    SizedBox(height: 10),
+                    TextField(
+                      controller: _networkImageUrlController,
+                      decoration: InputDecoration(
+                        labelText: 'Add Network Image URL',
+                        suffixIcon: IconButton(
+                          icon: Icon(Icons.add),
+                          onPressed: _addNetworkImageUrl,
+                        ),
+                        border: OutlineInputBorder(),
+                      ),
+                    ),
+                    SizedBox(height: 10),
+                    SizedBox(
+                      height: 120,
+                      child: ListView(
+                        scrollDirection: Axis.horizontal,
+                        children: [
+                          ...newGalleryImages.map(
+                            (img) => Stack(
+                              children: [
+                                kIsWeb
+                                    ? Image.network(
+                                      img.path,
+                                      width: 100,
+                                      height: 100,
+                                      fit: BoxFit.cover,
+                                    )
+                                    : Image.file(
+                                      File(img.path),
+                                      width: 100,
+                                      height: 100,
+                                      fit: BoxFit.cover,
+                                    ),
+                                Positioned(
+                                  right: 0,
+                                  top: 0,
+                                  child: GestureDetector(
+                                    onTap: () {
+                                      setState(() {
+                                        newGalleryImages.remove(img);
+                                      });
+                                    },
+                                    child: const Icon(
                                       Icons.close,
-                                      size: 14,
-                                      color: Colors.white,
+                                      color: Colors.red,
                                     ),
                                   ),
                                 ),
-                              ),
-                            ],
-                          ),
-                        )
-                        .toList(),
-              ),
-              SizedBox(height: 10),
-              // Text("New Gallery Images:"),
-              Wrap(
-                spacing: 10,
-                children:
-                    newGalleryImages
-                        .map(
-                          (file) => Image.file(
-                            File(file.path),
-                            width: 80,
-                            height: 80,
-                            fit: BoxFit.cover,
-                          ),
-                        )
-                        .toList(),
-              ),
-              SizedBox(height: 30),
-              GestureDetector(
-                onTap: _isLoading ? null : _saveChanges,
-                child: Container(
-                  width: double.infinity,
-                  padding: EdgeInsets.all(15),
-                  decoration: BoxDecoration(
-                    color: Color.fromARGB(
-                                    255,
-                                    47,
-                                    138,
-                                    47,
-                                  ),
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: Center(
-                    child:
-                        _isLoading
-                            ? CircularProgressIndicator(color: Colors.white)
-                            : Text(
-                              "Save Changes",
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
-                              ),
+                              ],
                             ),
-                  ),
+                          ),
+                          ...newNetworkImageUrls.map(
+                            (url) => Stack(
+                              children: [
+                                Image.network(
+                                  url,
+                                  width: 100,
+                                  height: 100,
+                                  fit: BoxFit.cover,
+                                ),
+                                Positioned(
+                                  right: 0,
+                                  top: 0,
+                                  child: GestureDetector(
+                                    onTap: () {
+                                      setState(() {
+                                        newNetworkImageUrls.remove(url);
+                                      });
+                                    },
+                                    child: const Icon(
+                                      Icons.close,
+                                      color: Colors.red,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+
+                    SizedBox(height: 30),
+                    GestureDetector(
+                      onTap: _isLoading ? null : _saveChanges,
+                      child: Container(
+                        width: double.infinity,
+                        padding: EdgeInsets.all(15),
+                        decoration: BoxDecoration(
+                          color: Color.fromARGB(255, 47, 138, 47),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Center(
+                          child: Text(
+                            "Save Changes",
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ),
-            ],
-          ),
-        ),
-      ),
     );
   }
 }
