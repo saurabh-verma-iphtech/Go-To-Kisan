@@ -67,7 +67,11 @@ void main() async {
     anonKey:
         'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFwbWRkY3liYnp3aW9xenF4d2ZjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDQxMTM1MzAsImV4cCI6MjA1OTY4OTUzMH0.bx6g7WEZMAtbH7hZGxPvYrLTgK5z1QU9Aa-19MDuHwk',
   );
-  runApp(ProviderScope(child: MyApp()));
+  runApp(EasyLocalization(
+    supportedLocales: const[Locale('en'),Locale('hi')],
+    path: 'assets/lang',
+    fallbackLocale: const Locale('en'),
+    child: ProviderScope(child: MyApp())));
 }
 
 class MyApp extends StatelessWidget {
@@ -79,6 +83,9 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'Go To Kisan',
+       localizationsDelegates: context.localizationDelegates,
+      supportedLocales: context.supportedLocales,
+      locale: context.locale, 
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.green),
         appBarTheme: AppBarTheme(

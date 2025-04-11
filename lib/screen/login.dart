@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:easy_localization/easy_localization.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -230,8 +231,8 @@ class _LoginState extends State<Login> with TickerProviderStateMixin {
                                 ? const CircularProgressIndicator(
                                   color: Colors.white,
                                 )
-                                : const Text(
-                                  "Log In",
+                                :  Text(
+                                  "login".tr(),
                                   style: TextStyle(
                                     color: Colors.white,
                                     fontSize: 16,
