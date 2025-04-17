@@ -5,7 +5,14 @@
     <!-- For API level >= 33 -->
     <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
     
+    <uses-permission android:name="android.permission.INTERNET" />
+
+
     <application
+        android:enableOnBackInvokedCallback="true"
+        android:usesCleartextTraffic="true"
+        android:hardwareAccelerated="true"
+        
         android:label="signup_login_page"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">

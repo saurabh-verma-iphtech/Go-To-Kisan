@@ -360,7 +360,7 @@ ScaffoldMessenger.of(context).showSnackBar(
                   'avgRating'.tr(),
                   style: TextStyle(fontWeight: FontWeight.bold),
                 ),
-                const Icon(Icons.star, color: Colors.amber),
+                const Icon(Icons.star, color: Colors.green),
                 Text(averageRating.toStringAsFixed(1)),
               ],
             ),
@@ -373,7 +373,7 @@ ScaffoldMessenger.of(context).showSnackBar(
                   return IconButton(
                     icon: Icon(
                       selectedRating >= star ? Icons.star : Icons.star_border,
-                      color: Colors.amber,
+                      color: Colors.green,
                     ),
                     onPressed: () {
                       setState(() {
@@ -468,7 +468,7 @@ ScaffoldMessenger.of(context).showSnackBar(
                                       children: [
                                         const Icon(
                                           Icons.star,
-                                          color: Colors.amber,
+                                          color: Colors.green,
                                           size: 18,
                                         ),
                                         const SizedBox(width: 2),

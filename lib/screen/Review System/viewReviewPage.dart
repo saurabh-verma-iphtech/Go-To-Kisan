@@ -105,7 +105,8 @@ class ViewReviewsPage extends StatelessWidget {
                   subtitle: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      const Icon(Icons.star, color: Colors.amber, size: 18),
+                      // const Icon(Icons.star, color: Colors.amber, size: 18),
+                      const Icon(Icons.star, color: Colors.green, size: 18),
                       Text('${(review['rating'] ?? '0'.toString())}'),
                     ],
                   ),
