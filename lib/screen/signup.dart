@@ -515,6 +515,7 @@ class _SignupState extends State<Signup> with SingleTickerProviderStateMixin {
     return Padding(
       padding: const EdgeInsets.only(bottom: 16),
       child: TextField(
+        style: TextStyle(color: Colors.black),
         controller: controller,
         obscureText: obscureText,
         keyboardType: keyboardType,
@@ -558,6 +559,7 @@ class _SignupState extends State<Signup> with SingleTickerProviderStateMixin {
 
   @override
   Widget build(BuildContext context) {
+  final isDark = Theme.of(context).brightness == Brightness.dark;
     double maxWidth =
         MediaQuery.of(context).size.width > 600 ? 600 : double.infinity;
 
@@ -638,21 +640,39 @@ class _SignupState extends State<Signup> with SingleTickerProviderStateMixin {
                     ),
                     Row(
                       children: [
-                        const Text(
+                        Text(
                           "Register As:",
-                          style: TextStyle(fontWeight: FontWeight.w600),
+                          style: TextStyle(fontWeight: FontWeight.w600,
+                            color: isDark ? const Color.fromARGB(255, 100, 98, 98) : Colors.white,
+                          ),
                         ),
                         const SizedBox(width: 10),
                         DropdownButton<String>(
                           value: selectedOption,
                           onChanged:
                               (val) => setState(() => selectedOption = val!),
+                          
+                            dropdownColor:
+                              isDark
+                                  ? Colors.grey[900]
+                                  : Colors.white, // optional: dropdown bg color
+
                           items:
                               ['Buyer', 'Seller']
                                   .map(
                                     (type) => DropdownMenuItem(
                                       value: type,
-                                      child: Text(type),
+                                      child: Text(type,style: TextStyle(
+                                          color:
+                                              isDark
+                                                  ? Colors.green
+                                                  :Color.fromARGB(
+                                                    255,
+                                                    100,
+                                                    98,
+                                                    98,
+                                                  ),
+                                        ),),
                                     ),
                                   )
                                   .toList(),
@@ -718,7 +738,7 @@ class _SignupState extends State<Signup> with SingleTickerProviderStateMixin {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        const Text("Already have an account? "),
+                        Text("Already have an account? ",style: TextStyle(color: isDark ? Colors.black: Colors.white),),
                         GestureDetector(
                           onTap:
                               () => Navigator.push(

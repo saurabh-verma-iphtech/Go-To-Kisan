@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:signup_login_page/screen/Seller/SellerDashboard.dart';
 import 'package:signup_login_page/screen/home.dart';
+import 'package:signup_login_page/screen/login.dart';
 
 class CompleteProfilePage extends StatefulWidget {
   const CompleteProfilePage({super.key});
@@ -142,8 +143,7 @@ class _CompleteProfilePageState extends State<CompleteProfilePage> {
       backgroundColor: const Color(0xFFF5F5F5),
       appBar: AppBar(
         title: const Text("Complete Profile"),
-        backgroundColor: const Color(0xFF2F8A2F),
-        elevation: 0,
+        leading: IconButton(onPressed: ()=>Navigator.push(context, MaterialPageRoute(builder: (_)=>Login())), icon: Icon(Icons.arrow_back)),
       ),
       body:
           isFetching
@@ -221,10 +221,12 @@ class _CompleteProfilePageState extends State<CompleteProfilePage> {
     TextInputType inputType,
   ) {
     return TextField(
+      style: TextStyle(color: Colors.black),
       controller: controller,
       keyboardType: inputType,
       decoration: InputDecoration(
         labelText: label,
+        labelStyle: const TextStyle(color: Colors.grey),
         filled: true,
         fillColor: Colors.white,
         contentPadding: const EdgeInsets.symmetric(

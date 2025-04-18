@@ -41,17 +41,26 @@ class _BookmarksPageState extends State<BookmarksPage> {
                 itemCount: bookmarks.length,
                 itemBuilder: (context, index) {
                   final article = bookmarks[index];
-                  return ListTile(
-                    title: Text(article['title'] ?? 'noTitle'.tr()),
-                    subtitle: Text(article['pubDate'] ?? ''),
-                    trailing: IconButton(
-                      icon: Icon(Icons.delete),
-                      onPressed: () async {
-                        await BookmarkService.removeBookmark(article);
-                        loadBookmarks();
-                      },
-                    ),
-                    onTap: () => openUrl(article['link']),
+                  return Column(
+                    children: [
+                      ListTile(
+                        title: Text(article['title'] ?? 'noTitle'.tr()),
+                        subtitle: Text(article['pubDate'] ?? ''),
+                        trailing: IconButton(
+                          icon: Icon(Icons.delete,color: Colors.red,),
+                          onPressed: () async {
+                            await BookmarkService.removeBookmark(article);
+                            loadBookmarks();
+                          },
+                        ),
+                        onTap: () => openUrl(article['link']),
+                      ),
+                      Divider(
+                        color: Theme.of(context).dividerColor,
+                        thickness: 1,
+                        height: 0,
+                      ),
+                    ],
                   );
                 },
               ),

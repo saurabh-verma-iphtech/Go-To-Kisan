@@ -175,10 +175,12 @@ class _LoginState extends State<Login> with TickerProviderStateMixin {
                       ),
                       const SizedBox(height: 20),
                       TextField(
+                        style: TextStyle(color: Colors.black),
                         controller: _emailController,
                         keyboardType: TextInputType.emailAddress,
                         decoration: InputDecoration(
                           hintText: "Email Address",
+                          hintStyle: TextStyle(color: Colors.grey),
                           prefixIcon: const Icon(
                             Icons.email,
                             color: Colors.green,
@@ -190,10 +192,14 @@ class _LoginState extends State<Login> with TickerProviderStateMixin {
                       ),
                       const SizedBox(height: 16),
                       TextField(
+                                                style: TextStyle(color: Colors.black),
+
                         controller: _passwordController,
                         obscureText: _obscurePassword,
                         decoration: InputDecoration(
                           hintText: "Password",
+                                                    hintStyle: TextStyle(color: Colors.grey),
+
                           prefixIcon: const Icon(
                             Icons.lock,
                             color: Colors.green,

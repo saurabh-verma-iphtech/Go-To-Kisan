@@ -117,7 +117,7 @@ class _AgriNewsPageState extends State<AgriNewsPage> {
             position: badges.BadgePosition.topEnd(top: -5, end: -25),
             badgeContent: Text(
               'bookmark'.tr(),
-              style: const TextStyle(color: Colors.white, fontSize: 10),
+              style: const TextStyle( fontSize: 10),
             ),
             badgeStyle: const badges.BadgeStyle(
               badgeColor: Colors.transparent,
@@ -125,7 +125,7 @@ class _AgriNewsPageState extends State<AgriNewsPage> {
               shape: badges.BadgeShape.instagram,
             ),
             child: IconButton(
-              icon: Icon(Icons.bookmarks, color: Colors.white),
+              icon: Icon(Icons.bookmarks,),
               onPressed: () {
                 Navigator.push(
                   context,

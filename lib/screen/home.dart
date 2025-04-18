@@ -4,11 +4,13 @@ import 'package:carousel_slider/carousel_slider.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:signup_login_page/News/Screens/newsUI2.dart';
+import 'package:signup_login_page/Theme/theme_provider.dart';
 import 'package:signup_login_page/screen/Buyer/buyerLogicHandler.dart';
 import 'package:signup_login_page/screen/Buyer/wishlistPage.dart';
 import 'package:signup_login_page/screen/Buyer/favouriteButton.dart';
-import 'package:signup_login_page/screen/Buyer/profile.dart';
+import 'package:signup_login_page/screen/Buyer/buyerProfile.dart';
 import 'package:signup_login_page/screen/Review%20System/reviewService.dart';
 import 'package:speech_to_text/speech_to_text.dart' as stt;
 import 'package:firebase_auth/firebase_auth.dart';
@@ -85,7 +87,7 @@ class _HomePageState extends State<HomePage> {
   // Create this helper widget for the badge
   Widget buildWishlistBadge(int count) {
     return Padding(
-      padding: const EdgeInsets.only(right: 16.0),
+      padding: const EdgeInsets.only(right: 0.0),
       child: badges.Badge(
         position: badges.BadgePosition.topEnd(top: -5, end: -5),
         showBadge: count > 0,
@@ -98,7 +100,7 @@ class _HomePageState extends State<HomePage> {
           padding: EdgeInsets.all(6),
         ),
         child: IconButton(
-          icon: Icon(Icons.favorite, color: Colors.white),
+          icon: Icon(Icons.favorite),
           onPressed: () {
             Navigator.push(
               context,
@@ -127,18 +129,19 @@ class _HomePageState extends State<HomePage> {
   Widget build(BuildContext context) {
     final w = MediaQuery.of(context).size.width;
     // final h = MediaQuery.of(context).size.height;
-
+    final theme = Theme.of(context);
     return Scaffold(
+      backgroundColor: theme.scaffoldBackgroundColor,
+
       appBar: AppBar(
         title:
             Text(
               'go_to_kisan'.tr(),
               style: TextStyle(
                 fontWeight: FontWeight.bold,
-                color: Colors.white,
+                // color: Colors.white,
               ),
             ).tr(),
-        backgroundColor: Color(0xFF2E7D32),
         automaticallyImplyLeading: false,
         scrolledUnderElevation: 0,
         actions: [
@@ -152,10 +155,10 @@ class _HomePageState extends State<HomePage> {
             ),
             badgeContent: Text(
               "news".tr(),
-              style: TextStyle(color: Colors.white),
+              // style: TextStyle(color: Colors.white),
             ),
             child: IconButton(
-              icon: Icon(Icons.newspaper_outlined, color: Colors.white),
+              icon: Icon(Icons.newspaper_outlined),
               onPressed: () {
                 Navigator.push(
                   context,
@@ -164,7 +167,25 @@ class _HomePageState extends State<HomePage> {
               },
             ),
           ),
-          SizedBox(width: w/30,),
+          SizedBox(width: w / 35),
+          Consumer(
+            builder: (context, ref, _) {
+              final themeMode = ref.watch(themeProvider);
+              final isDark = themeMode == ThemeMode.dark;
+
+              return IconButton(
+                icon: Icon(
+                  isDark ? Icons.light_mode : Icons.dark_mode,
+                  color: isDark ? Colors.white : Colors.black,
+                ),
+                tooltip:
+                    isDark ? 'Switch to Light Mode' : 'Switch to Dark Mode',
+                onPressed: () => ref.read(themeProvider.notifier).toggleTheme(),
+              );
+            },
+          ),
+
+          // Wishlist Page....Icon
           StreamBuilder<QuerySnapshot>(
             stream:
                 FirebaseFirestore.instance
@@ -181,13 +202,11 @@ class _HomePageState extends State<HomePage> {
           IconButton(
             icon: Icon(
               _showSearch ? Icons.close : Icons.search,
-              color: Colors.white,
             ),
             onPressed: () {
               setState(() {
                 _showSearch = !_showSearch;
                 if (!_showSearch) {
-                  // if hiding, also clear & unfocus
                   _searchController.clear();
                   searchQuery = '';
                   _searchFocus.unfocus();

@@ -212,15 +212,23 @@ ScaffoldMessenger.of(context).showSnackBar(
   @override
   Widget build(BuildContext context) {
     final product = widget.productData;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    //  Extract and format upload timestamp
+    final Timestamp? createdAtTime = product['createdAt'];
+    String formattedDate = '';
+    if (createdAtTime != null) {
+      formattedDate = DateFormat('dd MMM yyyy, hh:mm a').format(createdAtTime.toDate());
+    }
 
     return Scaffold(
       appBar: AppBar(
-        iconTheme: const IconThemeData(color: Colors.white),
+        // iconTheme: const IconThemeData(color: Colors.white),
         title: Text(
           'grainDetail'.tr(),
-          style: TextStyle(color: Colors.white),
+          // style: TextStyle(color: Colors.white),
         ),
-        backgroundColor: const Color(0xFF2E7D32),
+        // backgroundColor: const Color(0xFF2E7D32),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(12.0),
@@ -264,7 +272,7 @@ ScaffoldMessenger.of(context).showSnackBar(
                   TextSpan(
                     text: 'stock'.tr(),
                     style: TextStyle(
-                      color: Colors.black,
+                      color: isDark ? Colors.white :Colors.black,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
@@ -276,20 +284,36 @@ ScaffoldMessenger.of(context).showSnackBar(
               ),
             ),
             const SizedBox(height: 10),
-            Text(
-              product['description'] ?? 'No Description',
-              style: const TextStyle(fontSize: 14),
-            ),
+            RichText(text: TextSpan(
+              children: [
+                TextSpan(text: "Description: ",style: TextStyle(color: isDark ? Colors.white :Colors.black,fontWeight: FontWeight.bold)),
+                TextSpan(text: product['description'] ?? 'No Description',
+              style:  TextStyle(fontSize: 14,color: isDark ? Colors.white :Colors.black)
+            )]
+            )),
+                        const SizedBox(height: 5),
+
+            if (formattedDate.isNotEmpty) ...[
+              Text(
+                '${'Uploaded At'.tr()}: $formattedDate',
+                style:  TextStyle(
+                  fontSize: 14,
+                  fontStyle: FontStyle.italic,
+                  fontWeight:FontWeight.bold
+                ),
+              ),
+              const SizedBox(height: 8),
+            ],
             const Divider(height: 30),
-            const Text(
-              '',
+             Text(
+              'sellerDetail'.tr(),
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
                 decoration: TextDecoration.underline,
               ),
             ),
-            const SizedBox(height: 15),
+            // const SizedBox(height: 15),
             sellerData == null
                 ? const Center(child: CircularProgressIndicator())
                 : Padding(

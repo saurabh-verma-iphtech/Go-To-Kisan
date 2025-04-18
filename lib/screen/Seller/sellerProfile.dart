@@ -1,240 +1,10 @@
-// import 'package:flutter/material.dart';
-// import 'package:firebase_auth/firebase_auth.dart';
-// import 'package:cloud_firestore/cloud_firestore.dart';
-// import 'package:signup_login_page/screen/home.dart';
-// import 'package:signup_login_page/screen/Seller/sellerEditProfilePage.dart';
-
-// class SellerProfile extends StatefulWidget {
-//   @override
-//   _SellerProfileState createState() => _SellerProfileState();
-// }
-
-// class _SellerProfileState extends State<SellerProfile> {
-//   String sellerName = "";
-//   String sellerEmail = "";
-//   String sellerAddress = "";
-//   String sellerRole = "";
-//   String sellerNumber = "";
-//   String sellerPincode = "";
-//   bool isLoading = true;
-
-//   @override
-//   void initState() {
-//     super.initState();
-//     _getSellerDetails();
-//   }
-
-//   Future<void> _getSellerDetails() async {
-//     User? user = FirebaseAuth.instance.currentUser;
-
-//     if (user != null) {
-//       var userDoc = FirebaseFirestore.instance
-//           .collection('users')
-//           .doc(user.uid);
-//       var docSnapshot = await userDoc.get();
-
-//       if (docSnapshot.exists) {
-//         setState(() {
-//           sellerName = docSnapshot['name'] ?? 'No Name';
-//           sellerEmail = docSnapshot['email'] ?? 'No Email';
-//           sellerAddress = docSnapshot['address'] ?? 'No Address';
-//           sellerRole = docSnapshot['userType'] ?? 'No Role';
-//           sellerNumber = docSnapshot['phoneNumber'] ?? 'No Number';
-//           sellerPincode = docSnapshot['pincode'] ?? 'No Pincode';
-//           isLoading = false;
-//         });
-//       } else {
-//         setState(() => isLoading = false);
-//         print("No data found for this seller.");
-//       }
-//     } else {
-//       setState(() => isLoading = false);
-//       print("No user is logged in.");
-//     }
-//   }
-
-//   Widget buildInfoTile(String label, String value, IconData icon) {
-//     return Padding(
-//       padding: const EdgeInsets.symmetric(vertical: 8.0),
-//       child: Row(
-//         children: [
-//           Icon(icon, color: Colors.green),
-//           SizedBox(width: 10),
-//           Expanded(
-//             // child: Text("$label: $value", style: TextStyle(fontSize: 18)),
-//             child: RichText(text: 
-//             TextSpan(children: [
-//               TextSpan(text: "$label: ", style: TextStyle(fontSize: 18,color: Colors.black,fontWeight: FontWeight.w400)),
-//               TextSpan(text: "$value", style: TextStyle(fontSize: 18, color: Colors.blue)),
-//             ],
-            
-//           ),
-//             ),
-//           )
-//         ],
-//       ),
-//     );
-//   }
-
-//   @override
-//   Widget build(BuildContext context) {
-//     return Scaffold(
-//       backgroundColor: Color(0xFFF7FFF7),
-//       appBar: AppBar(
-//         backgroundColor: Color.fromARGB(255, 47, 138, 47),
-//         title: Text("Profile"),
-//       ),
-//       body:
-//           isLoading
-//               ? Center(child: CircularProgressIndicator())
-//               : SingleChildScrollView(
-//                 padding: const EdgeInsets.all(20),
-//                 child: Column(
-//                   crossAxisAlignment: CrossAxisAlignment.start,
-//                   children: [
-//                     AnimatedContainer(
-//                       duration: Duration(milliseconds: 600),
-//                       curve: Curves.easeInOut,
-//                       alignment: Alignment.center,
-//                       child: Column(
-//                         children: [
-//                           CircleAvatar(
-//                             radius: 45,
-//                             backgroundColor: Colors.green.shade100,
-//                             child: Icon(
-//                               Icons.person,
-//                               size: 50,
-//                               color: Colors.green.shade700,
-//                             ),
-//                           ),
-//                           SizedBox(height: 15),
-//                           RichText(
-//                              text :TextSpan(
-//                                children: [
-//                                 TextSpan(
-//                                   text: 'Welcome, ',
-//                                   style: const TextStyle(
-//                                     fontSize: 22,
-//                                     fontWeight: FontWeight.w600,
-//                                     color: Colors.black
-//                                   ),
-//                                 ),
-//                                 TextSpan(
-//                                   text: sellerName,
-//                                   style: const TextStyle(
-//                                     color: Colors.red,
-//                                     fontSize: 22,
-//                                     fontWeight: FontWeight.w600,
-//                                   ),
-//                                 ),
-//                               ]
-//                             ),
-//                           ),
-//                         ],
-//                       ),
-//                     ),
-//                     SizedBox(height: 30),
-//                     Card(
-//                       elevation: 6,
-//                       shape: RoundedRectangleBorder(
-//                         borderRadius: BorderRadius.circular(15),
-//                       ),
-//                       child: Padding(
-//                         padding: const EdgeInsets.all(18.0),
-//                         child: Column(
-//                           crossAxisAlignment: CrossAxisAlignment.start,
-//                           children: [
-//                             buildInfoTile("Email", sellerEmail, Icons.email),
-//                             buildInfoTile("Phone", sellerNumber, Icons.phone),
-//                             buildInfoTile("Address", sellerAddress, Icons.home),
-//                             buildInfoTile(
-//                               "Pincode",
-//                               sellerPincode,
-//                               Icons.location_on,
-//                             ),
-//                             buildInfoTile(
-//                               "Role",
-//                               sellerRole,
-//                               Icons.work_outline,
-//                             ),
-//                           ],
-//                         ),
-//                       ),
-//                     ),
-//                     SizedBox(height: 30),
-//                     ElevatedButton.icon(
-//                       style: ElevatedButton.styleFrom(
-//                         backgroundColor: Color.fromARGB(255, 47, 138, 47),
-//                         foregroundColor: Colors.white,
-//                         elevation: 8,
-//                         padding: EdgeInsets.symmetric(
-//                           horizontal: 25,
-//                           vertical: 15,
-//                         ),
-//                         shape: RoundedRectangleBorder(
-//                           borderRadius: BorderRadius.circular(15),
-//                         ),
-//                       ),
-//                       icon: Icon(Icons.edit),
-//                       label: Text("Edit Details"),
-//                       onPressed: () {
-//                         Navigator.push(
-//                           context,
-//                           MaterialPageRoute(
-//                             builder: (context) => EditSellerProfileScreen(),
-//                           ),
-//                         ).then((_) => _getSellerDetails());
-//                       },
-//                     ),
-//                     SizedBox(height: 30),
-//                     Center(
-//                       child: TextButton.icon(
-//                         icon: Icon(Icons.logout),
-//                         style: TextButton.styleFrom(
-//                           backgroundColor: Colors.red,
-//                           foregroundColor: Colors.white,
-//                           padding: EdgeInsets.symmetric(
-//                             horizontal: 20,
-//                             vertical: 10,
-//                           ),
-//                           shape: RoundedRectangleBorder(
-//                             borderRadius: BorderRadius.circular(10),
-//                           ),
-//                         ),
-//                         label: Text(
-//                           "Log Out",
-//                           style: TextStyle(
-//                             fontSize: 16,
-//                             fontWeight: FontWeight.bold,
-//                           ),
-//                         ),
-//                         onPressed: () {
-//                           FirebaseAuth.instance.signOut();
-//                           Navigator.pushReplacement(
-//                             context,
-//                             MaterialPageRoute(builder: (context) => HomePage()),
-//                           );
-//                         },
-//                       ),
-//                     ),
-//                   ],
-//                 ),
-//               ),
-//     );
-//   }
-// }
-
-
-
-
-import 'package:firebase_auth/firebase_auth.dart' as fb_auth;
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:signup_login_page/screen/home.dart';
 import 'package:signup_login_page/screen/Seller/sellerEditProfilePage.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 
 class SellerProfile extends StatefulWidget {
   @override
@@ -248,7 +18,7 @@ class _SellerProfileState extends State<SellerProfile> {
   String sellerRole = "";
   String sellerNumber = "";
   String sellerPincode = "";
-        String? profileImageUrl;
+  String? profileImageUrl;
 
   bool isLoading = true;
 
@@ -266,13 +36,13 @@ class _SellerProfileState extends State<SellerProfile> {
       final picked = await ImagePicker().pickImage(source: ImageSource.gallery);
       if (picked == null) return;
 
-      final supabase = Supabase.instance.client;
       final bytes = await picked.readAsBytes();
       final fileName =
           'profile_${user.uid}_${DateTime.now().millisecondsSinceEpoch}.jpg';
 
-      final uploadResponse = await supabase.storage
-          .from('user-images') // Your Supabase bucket
+      final supabase = Supabase.instance.client;
+      await supabase.storage
+          .from('user-images')
           .uploadBinary(
             fileName,
             bytes,
@@ -283,7 +53,6 @@ class _SellerProfileState extends State<SellerProfile> {
           .from('user-images')
           .getPublicUrl(fileName);
 
-      // Save image URL in Firestore
       await FirebaseFirestore.instance.collection('users').doc(user.uid).update(
         {'profileImage': imageUrl},
       );
@@ -292,50 +61,53 @@ class _SellerProfileState extends State<SellerProfile> {
         profileImageUrl = imageUrl;
       });
     } catch (e) {
-      print('Error uploading image: $e');
+      print('Image upload error: $e');
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Failed to upload image')));
     }
   }
 
   Future<void> _getSellerDetails() async {
-fb_auth.User? user = fb_auth.FirebaseAuth.instance.currentUser;
-
+    final user = FirebaseAuth.instance.currentUser;
     if (user != null) {
-      var userDoc = FirebaseFirestore.instance
-          .collection('users')
-          .doc(user.uid);
-      var docSnapshot = await userDoc.get();
-
-      if (docSnapshot.exists) {
+      final doc =
+          await FirebaseFirestore.instance
+              .collection('users')
+              .doc(user.uid)
+              .get();
+      if (doc.exists) {
+        final data = doc.data();
         setState(() {
-          sellerName = docSnapshot['name'] ?? 'No Name';
-          sellerEmail = docSnapshot['email'] ?? 'No Email';
-          sellerAddress = docSnapshot['address'] ?? 'No Address';
-          sellerRole = docSnapshot['userType'] ?? 'No Role';
-          sellerNumber = docSnapshot['phoneNumber'] ?? 'No Number';
-          sellerPincode = docSnapshot['pincode'] ?? 'No Pincode';
-          profileImageUrl = docSnapshot['profileImage'] ?? null;
-
+          sellerName = data?['name'] ?? '';
+          sellerEmail = data?['email'] ?? '';
+          sellerAddress = data?['address'] ?? '';
+          sellerRole = data?['userType'] ?? '';
+          sellerNumber = data?['phoneNumber'] ?? '';
+          sellerPincode = data?['pincode'] ?? '';
+          profileImageUrl = data?['profileImage'];
           isLoading = false;
         });
       } else {
         setState(() => isLoading = false);
-        print("No data found for this seller.");
+        print("Seller data not found.");
       }
     } else {
       setState(() => isLoading = false);
-      print("No user is logged in.");
+      print("No user signed in.");
     }
   }
 
   Widget buildInfoTile(String label, String value, IconData icon) {
+            final colorScheme = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8.0),
       child: Row(
         children: [
-          Icon(icon, color: Colors.green),
+          Icon(icon, color: colorScheme.primary),
           SizedBox(width: 10),
           Expanded(
-            // child: Text("$label: $value", style: TextStyle(fontSize: 18)),
             child: RichText(
               text: TextSpan(
                 children: [
@@ -343,13 +115,13 @@ fb_auth.User? user = fb_auth.FirebaseAuth.instance.currentUser;
                     text: "$label: ",
                     style: TextStyle(
                       fontSize: 18,
-                      color: Colors.black,
+                      color: isDark ? Colors.white : Colors.black,
                       fontWeight: FontWeight.w400,
                     ),
                   ),
                   TextSpan(
-                    text: "$value",
-                    style: TextStyle(fontSize: 18, color: Colors.blue),
+                    text: value,
+                    style: const TextStyle(fontSize: 18, color: Colors.blue),
                   ),
                 ],
               ),
@@ -362,22 +134,30 @@ fb_auth.User? user = fb_auth.FirebaseAuth.instance.currentUser;
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+        final colorScheme = Theme.of(context).colorScheme;
+
     return Scaffold(
-      backgroundColor: Color(0xFFF7FFF7),
+      backgroundColor: isDark ? Colors.black : Color(0xFFF7FFF7),
       appBar: AppBar(
-        backgroundColor: Color.fromARGB(255, 47, 138, 47),
-        title: Text("Profile"),
+                iconTheme: IconThemeData(color: colorScheme.onPrimary),
+
+        title: Text("Profile",
+          style: TextStyle(color: colorScheme.onPrimary),
+        ),
+        backgroundColor: colorScheme.primary,
+        elevation: 2,
       ),
       body:
           isLoading
-              ? Center(child: CircularProgressIndicator())
+              ? const Center(child: CircularProgressIndicator())
               : SingleChildScrollView(
                 padding: const EdgeInsets.all(20),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     AnimatedContainer(
-                      duration: Duration(milliseconds: 600),
+                      duration: const Duration(milliseconds: 600),
                       curve: Curves.easeInOut,
                       alignment: Alignment.center,
                       child: Column(
@@ -405,9 +185,9 @@ fb_auth.User? user = fb_auth.FirebaseAuth.instance.currentUser;
                                 bottom: 0,
                                 right: 4,
                                 child: InkWell(
-                                  onTap: () => _pickAndUploadImage(),
+                                  onTap: _pickAndUploadImage,
                                   child: Container(
-                                    padding: EdgeInsets.all(6),
+                                    padding: const EdgeInsets.all(6),
                                     decoration: BoxDecoration(
                                       color: Colors.white,
                                       shape: BoxShape.circle,
@@ -418,7 +198,7 @@ fb_auth.User? user = fb_auth.FirebaseAuth.instance.currentUser;
                                         ),
                                       ],
                                     ),
-                                    child: Icon(
+                                    child: const Icon(
                                       Icons.edit,
                                       color: Colors.blue,
                                       size: 20,
@@ -428,16 +208,16 @@ fb_auth.User? user = fb_auth.FirebaseAuth.instance.currentUser;
                               ),
                             ],
                           ),
-                          SizedBox(height: 15),
+                          const SizedBox(height: 15),
                           RichText(
                             text: TextSpan(
                               children: [
-                                TextSpan(
+                                const TextSpan(
                                   text: 'Welcome, ',
-                                  style: const TextStyle(
+                                  style: TextStyle(
                                     fontSize: 22,
                                     fontWeight: FontWeight.w600,
-                                    color: Colors.black,
+                                    color: Colors.grey,
                                   ),
                                 ),
                                 TextSpan(
@@ -454,7 +234,7 @@ fb_auth.User? user = fb_auth.FirebaseAuth.instance.currentUser;
                         ],
                       ),
                     ),
-                    SizedBox(height: 30),
+                    const SizedBox(height: 30),
                     Card(
                       elevation: 6,
                       shape: RoundedRectangleBorder(
@@ -482,13 +262,13 @@ fb_auth.User? user = fb_auth.FirebaseAuth.instance.currentUser;
                         ),
                       ),
                     ),
-                    SizedBox(height: 30),
+                    const SizedBox(height: 30),
                     ElevatedButton.icon(
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: Color.fromARGB(255, 47, 138, 47),
+                        backgroundColor: colorScheme.primary,
                         foregroundColor: Colors.white,
                         elevation: 8,
-                        padding: EdgeInsets.symmetric(
+                        padding: const EdgeInsets.symmetric(
                           horizontal: 25,
                           vertical: 15,
                         ),
@@ -496,8 +276,10 @@ fb_auth.User? user = fb_auth.FirebaseAuth.instance.currentUser;
                           borderRadius: BorderRadius.circular(15),
                         ),
                       ),
-                      icon: Icon(Icons.edit),
-                      label: Text("Edit Details"),
+                      icon:  Icon(Icons.edit,color:colorScheme.onPrimary ,),
+                      label: Text("Edit Details",
+                        style: TextStyle(color: colorScheme.onPrimary),
+                      ),
                       onPressed: () {
                         Navigator.push(
                           context,
@@ -507,14 +289,14 @@ fb_auth.User? user = fb_auth.FirebaseAuth.instance.currentUser;
                         ).then((_) => _getSellerDetails());
                       },
                     ),
-                    SizedBox(height: 30),
+                    const SizedBox(height: 30),
                     Center(
                       child: TextButton.icon(
-                        icon: Icon(Icons.logout),
+                        icon: const Icon(Icons.logout),
                         style: TextButton.styleFrom(
                           backgroundColor: Colors.red,
                           foregroundColor: Colors.white,
-                          padding: EdgeInsets.symmetric(
+                          padding: const EdgeInsets.symmetric(
                             horizontal: 20,
                             vertical: 10,
                           ),
@@ -522,7 +304,7 @@ fb_auth.User? user = fb_auth.FirebaseAuth.instance.currentUser;
                             borderRadius: BorderRadius.circular(10),
                           ),
                         ),
-                        label: Text(
+                        label: const Text(
                           "Log Out",
                           style: TextStyle(
                             fontSize: 16,
