@@ -464,9 +464,11 @@ class _AddProductPageState extends State<AddProductPage> {
         'imageUrls': allImageUrls,
         'sellerId': user.uid,
         'createdAt': FieldValue.serverTimestamp(),
+        'approved': true,
       };
 
       await FirebaseFirestore.instance.collection('products').add(productData);
+await Future.delayed(const Duration(seconds: 1)); // Give time to sync
 
       ScaffoldMessenger.of(
         context,

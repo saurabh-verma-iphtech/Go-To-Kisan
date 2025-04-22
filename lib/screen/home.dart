@@ -12,6 +12,7 @@ import 'package:signup_login_page/screen/Buyer/wishlistPage.dart';
 import 'package:signup_login_page/screen/Buyer/favouriteButton.dart';
 import 'package:signup_login_page/screen/Buyer/buyerProfile.dart';
 import 'package:signup_login_page/screen/Review%20System/reviewService.dart';
+import 'package:signup_login_page/screen/weather/screens/weather_screen.dart';
 import 'package:speech_to_text/speech_to_text.dart' as stt;
 import 'package:firebase_auth/firebase_auth.dart';
 import '../screen/login.dart';
@@ -134,6 +135,7 @@ class _HomePageState extends State<HomePage> {
       backgroundColor: theme.scaffoldBackgroundColor,
 
       appBar: AppBar(
+        // title:Image.asset("assets/images/logo2.png",height: 50,),
         title:
             Text(
               'go_to_kisan'.tr(),
@@ -153,10 +155,7 @@ class _HomePageState extends State<HomePage> {
               padding: EdgeInsets.all(1),
               elevation: 0,
             ),
-            badgeContent: Text(
-              "news".tr(),
-              // style: TextStyle(color: Colors.white),
-            ),
+            badgeContent: Text("news".tr()),
             child: IconButton(
               icon: Icon(Icons.newspaper_outlined),
               onPressed: () {
@@ -200,9 +199,7 @@ class _HomePageState extends State<HomePage> {
           ),
           //search icon
           IconButton(
-            icon: Icon(
-              _showSearch ? Icons.close : Icons.search,
-            ),
+            icon: Icon(_showSearch ? Icons.close : Icons.search),
             onPressed: () {
               setState(() {
                 _showSearch = !_showSearch;
@@ -239,6 +236,11 @@ class _HomePageState extends State<HomePage> {
                   context,
                   MaterialPageRoute(builder: (_) => const Signup()),
                 );
+              } else if (val == 'weather') {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => WeatherHomePage()),
+                );
               }
             },
             itemBuilder: (context) {
@@ -249,11 +251,15 @@ class _HomePageState extends State<HomePage> {
                 items.addAll([
                   PopupMenuItem(value: 'profile', child: Text('profile'.tr())),
                   PopupMenuItem(value: 'logout', child: Text('logout'.tr())),
+                  PopupMenuItem(value: 'weather', child: Text('Weather'.tr())),
+
                 ]);
               } else {
                 items.addAll([
                   PopupMenuItem(value: 'Login', child: Text('login'.tr())),
                   PopupMenuItem(value: 'Signup', child: Text('signup'.tr())),
+                                    PopupMenuItem(value: 'weather', child: Text('Weather'.tr())),
+
                 ]);
               }
 
@@ -331,6 +337,7 @@ class _HomePageState extends State<HomePage> {
                   FirebaseFirestore.instance
                       .collection('products')
                       .orderBy('createdAt', descending: true)
+                      .where('approved', isEqualTo: true)
                       .snapshots(),
               builder: (ctx, snap) {
                 if (snap.connectionState == ConnectionState.waiting) {
@@ -407,7 +414,6 @@ class _HomePageState extends State<HomePage> {
                     ],
                   );
                 }
-
                 // SEARCH RESULTS: just the filtered grid
                 return _buildGrid(filtered);
               },

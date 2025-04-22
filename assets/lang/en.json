@@ -38,6 +38,11 @@
 
   "agriNews": "Agri News",
 
+  
+  "amaranth":"Amaranth",
+  "brown rice":"Brown Rice",
+  "bulgur":"Bulgur",
+  "bulgur rice":"बुलगुर चावल",
   "Barley": "Barley",
   "Black Gram": "Black Gram",
   "Buckwheat": "Buckwheat",
@@ -66,6 +71,7 @@
   "कनाडा चावल": "Wild rice",
   "जंगली चावल": "Wild rice",
   "Wild rice": "जंगली चावल",
+  "भूरे रंग के चावल":"Broen Rice",
 
   "wheat": "Wheat",
   "rice": "Rice",

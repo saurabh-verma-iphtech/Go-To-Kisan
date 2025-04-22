@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:signup_login_page/screen/CompleteProfilePage.dart';
 import 'package:signup_login_page/screen/Seller/SellerDashboard.dart';
+import 'package:signup_login_page/screen/admin/admin_dashboard.dart';
 import 'package:signup_login_page/screen/home.dart';
 import 'package:signup_login_page/screen/signup.dart';
 
@@ -102,11 +103,17 @@ class _LoginState extends State<Login> with TickerProviderStateMixin {
             context,
             MaterialPageRoute(builder: (context) => HomePage()),
           );
-        } else {
+        } else if (userType == 'Seller') {
           await prefs.setString('userRole', 'seller');
           Navigator.pushReplacement(
             context,
             MaterialPageRoute(builder: (context) => SellerDashboard()),
+          );
+        } else {
+          await prefs.setString('userRole', 'admin');
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (context) => AdminDashboard()),
           );
         }
       }
@@ -140,7 +147,7 @@ class _LoginState extends State<Login> with TickerProviderStateMixin {
       body: FadeTransition(
         opacity: _fadeAnimation,
         child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 24,vertical: 50),
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 50),
           child: Padding(
             padding: const EdgeInsets.only(top: 20.0),
             child: Column(
@@ -192,13 +199,13 @@ class _LoginState extends State<Login> with TickerProviderStateMixin {
                       ),
                       const SizedBox(height: 16),
                       TextField(
-                                                style: TextStyle(color: Colors.black),
+                        style: TextStyle(color: Colors.black),
 
                         controller: _passwordController,
                         obscureText: _obscurePassword,
                         decoration: InputDecoration(
                           hintText: "Password",
-                                                    hintStyle: TextStyle(color: Colors.grey),
+                          hintStyle: TextStyle(color: Colors.grey),
 
                           prefixIcon: const Icon(
                             Icons.lock,
@@ -237,7 +244,7 @@ class _LoginState extends State<Login> with TickerProviderStateMixin {
                                 ? const CircularProgressIndicator(
                                   color: Colors.white,
                                 )
-                                :  Text(
+                                : Text(
                                   "login".tr(),
                                   style: TextStyle(
                                     color: Colors.white,
