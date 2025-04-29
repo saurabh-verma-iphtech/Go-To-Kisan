@@ -29,15 +29,17 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   // UI data
   final List<String> imageList = [
-    'https://eg72s2n2avc.exactdn.com/wp-content/uploads/2022/09/sunset-and-wheat-field-wallpaper-hd-beautiful-desktop-background-hd-wallpapers-of-sunset-field-free-download.jpg',
-    'https://images.livemint.com/rf/Image-621x414/LiveMint/Period2/2016/10/18/Photos/Processed/maha1-kvDH--621x414@LiveMint.JPG',
-    'https://images.pexels.com/photos/96715/pexels-photo-96715.jpeg?cs=srgb&dl=pexels-alejandro-barron-21404-96715.jpg&fm=jpg',
-    'https://thumbs.dreamstime.com/b/different-corn-plantation-524311.jpg',
-    'https://pressinstitute.in/wp-content/uploads/2023/09/img-43.jpg',
+    'assets/kisan/kisan1.jpg',
+    'assets/kisan/kisan2.jpg',
+    'assets/kisan/kisan3.jpg',
+    'assets/kisan/kisan4.jpg',
+    'assets/kisan/kisan5.jpeg',
   ];
 
-  int cartItemCount = 0;
 
+
+
+  int cartItemCount = 0;
   // Search & voice
   final TextEditingController _searchController = TextEditingController();
   final FocusNode _searchFocus = FocusNode();
@@ -126,6 +128,7 @@ class _HomePageState extends State<HomePage> {
   bool get _isSearching =>
       _searchFocus.hasFocus || searchQuery.trim().isNotEmpty;
 
+
   @override
   Widget build(BuildContext context) {
     final w = MediaQuery.of(context).size.width;
@@ -135,15 +138,23 @@ class _HomePageState extends State<HomePage> {
       backgroundColor: theme.scaffoldBackgroundColor,
 
       appBar: AppBar(
-        // title:Image.asset("assets/images/logo2.png",height: 50,),
+        titleSpacing: 0,
+        // leadingWidth: 0,
         title:
-            Text(
-              'go_to_kisan'.tr(),
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                // color: Colors.white,
-              ),
-            ).tr(),
+            Padding(
+              padding: const EdgeInsets.only(bottom: 8.0),
+              child: Consumer(
+                        builder: (context, ref, _) {
+              final themeMode = ref.watch(themeProvider);
+              final isDark = themeMode == ThemeMode.dark;
+              
+              return Image.asset(
+                  isDark ? 'assets/kisan/logoL.png' : 'assets/kisan/logoD.png',
+                  width: 130,
+              );
+                        },
+                      ),
+            ),
         automaticallyImplyLeading: false,
         scrolledUnderElevation: 0,
         actions: [
@@ -383,7 +394,7 @@ class _HomePageState extends State<HomePage> {
                                   .map(
                                     (url) => SizedBox(
                                       width: double.infinity,
-                                      child: Image.network(
+                                      child: Image.asset(
                                         url,
                                         fit: BoxFit.cover,
                                       ),
@@ -489,11 +500,16 @@ class _ProductCard extends StatelessWidget {
     required this.address,
     required this.phone,
   });
+  
 
   @override
   Widget build(BuildContext ctx) {
     final w = MediaQuery.of(ctx).size.width;
     final h = MediaQuery.of(ctx).size.height;
+    
+
+    // Fetching the current user's ID using Firebase Authentication
+    // final currentUserId = FirebaseAuth.instance.currentUser?.uid;
 
     if (images.isNotEmpty) {
     } else if (product['imageUrl'] != null) {
@@ -593,7 +609,6 @@ class _ProductCard extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Name + location row
                     Row(
                       children: [
                         Expanded(
@@ -753,6 +768,7 @@ class _ProductCard extends StatelessWidget {
                               color: Colors.green,
                             ),
                           ),
+
                         ],
                       ),
                     ),

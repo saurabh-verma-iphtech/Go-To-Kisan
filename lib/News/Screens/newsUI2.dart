@@ -2,6 +2,7 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:signup_login_page/News/Screens/bookMark.dart';
+import 'package:signup_login_page/News/Screens/newsDetailPage.dart';
 import 'package:signup_login_page/News/Screens/servicesBookmark.dart';
 import 'dart:convert';
 import 'package:url_launcher/url_launcher.dart';
@@ -138,7 +139,7 @@ class _AgriNewsPageState extends State<AgriNewsPage> {
           DropdownButtonHideUnderline(
             child: DropdownButton<String>(
               value: selectedLanguage,
-              icon: Icon(Icons.language, color: Colors.white),
+              icon: Icon(Icons.language),
               dropdownColor: Colors.white,
               items:
                   languageMap.entries.map((entry) {
@@ -210,7 +211,16 @@ class _AgriNewsPageState extends State<AgriNewsPage> {
                           elevation: 4,
                           child: InkWell(
                             borderRadius: BorderRadius.circular(15),
-                            onTap: () => openUrl(article['link'] ?? ''),
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder:
+                                      (_) => NewsDetailPage(article: article),
+                                ),
+                              );
+                            },
+
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
@@ -221,12 +231,22 @@ class _AgriNewsPageState extends State<AgriNewsPage> {
                                     ),
                                     child: Image.network(
                                       article['image_url'],
-                                      height: 180,
-                                      width: double.infinity,
-                                      fit: BoxFit.cover,
+                                      loadingBuilder: (
+                                        context,
+                                        child,
+                                        loadingProgress,
+                                      ) {
+                                        if (loadingProgress == null) {
+                                          return child;
+                                        }
+                                        return Center(
+                                          child: CircularProgressIndicator(),
+                                        );
+                                      },
                                       errorBuilder:
-                                          (context, _, __) => SizedBox.shrink(),
-                                    ),
+                                          (context, error, stackTrace) =>
+                                              Icon(Icons.broken_image),
+                                    )
                                   ),
                                 Padding(
                                   padding: const EdgeInsets.all(12.0),
