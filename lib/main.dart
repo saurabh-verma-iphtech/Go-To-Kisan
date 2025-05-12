@@ -11,7 +11,6 @@ import 'package:easy_localization/easy_localization.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
     await EasyLocalization.ensureInitialized();
-
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   await Supabase.initialize(
     url: 'https://qpmddcybbzwioqzqxwfc.supabase.co',

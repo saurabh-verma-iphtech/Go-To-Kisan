@@ -1,7 +1,7 @@
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 
-import 'package:signup_login_page/screen/weather/models/weather_model.dart';
+import 'package:signup_login_page/screen/Weather/models/weather_model.dart';
 
 class WeatherService {
   final String apiKey = 'fe85634e84271722dca705388c0beb75';
@@ -21,4 +21,5 @@ class WeatherService {
       throw Exception('Failed to load weather data');
     }
   }
+  
 }

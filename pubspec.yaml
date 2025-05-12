@@ -62,6 +62,7 @@ dependencies:
   webview_flutter: ^4.10.0
   shimmer: ^3.0.0
   geolocator: ^14.0.0
+  firebase_database: ^11.3.5
 
 
 dev_dependencies:
@@ -89,7 +90,15 @@ flutter:
 
   # To add assets to your application, add an assets section, like this:
   assets:
+    - assets/kisan/logoL.png
+    - assets/kisan/logoD.png
+    - assets/kisan/kisan1.jpg
+    - assets/kisan/kisan2.jpg
+    - assets/kisan/kisan3.jpg
+    - assets/kisan/kisan4.jpg
+    - assets/kisan/kisan5.jpeg
     - assets/images/logo2.png
+    - assets/images/google.webp
     - assets/sun.svg
     - assets/1sun.svg
     - assets/field.svg
@@ -103,6 +112,9 @@ flutter:
     - assets/birds2.gif
     - assets/butterfly.gif
     - assets/lang/
+    - assets/images/day.png
+    - assets/images/night.png
+    
   #   - images/a_dot_ham.jpeg
 
   # An image asset can refer to one or more resolution-specific "variants", see

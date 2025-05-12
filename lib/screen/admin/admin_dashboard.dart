@@ -1,3 +1,4 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:signup_login_page/screen/admin/product_mgt_page.dart';
 import 'package:signup_login_page/screen/admin/user_mgt_page.dart';
@@ -16,11 +17,13 @@ class _AdminDashboardState extends State<AdminDashboard> {
     ProductManagementPage(),
   ];
 
-  void logout(BuildContext context) {
+  void logout(BuildContext context) async{
     // Navigate to the Login screen and replace the AdminDashboard
-    Navigator.pushReplacement(
+      await FirebaseAuth.instance.signOut(); // Ensure sign out completes
+    Navigator.pushAndRemoveUntil(
       context,
       MaterialPageRoute(builder: (_) => HomePage()),
+      (route) => false,
     );
   }
 

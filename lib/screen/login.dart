@@ -6,8 +6,10 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:signup_login_page/screen/CompleteProfilePage.dart';
 import 'package:signup_login_page/screen/Seller/SellerDashboard.dart';
 import 'package:signup_login_page/screen/admin/admin_dashboard.dart';
+import 'package:signup_login_page/screen/forgot_password.dart';
 import 'package:signup_login_page/screen/home.dart';
 import 'package:signup_login_page/screen/signup.dart';
+import 'package:signup_login_page/services/Google_signin_services.dart';
 
 class Login extends StatefulWidget {
   const Login({super.key});
@@ -143,7 +145,9 @@ class _LoginState extends State<Login> with TickerProviderStateMixin {
     final screen = MediaQuery.of(context).size;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF1FFF1),
+      // backgroundColor: const Color(0xFFF1FFF1),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+
       body: FadeTransition(
         opacity: _fadeAnimation,
         child: SingleChildScrollView(
@@ -160,7 +164,8 @@ class _LoginState extends State<Login> with TickerProviderStateMixin {
                   curve: Curves.easeInOut,
                   padding: const EdgeInsets.all(24),
                   decoration: BoxDecoration(
-                    color: Colors.white,
+                    // color: Colors.white,
+                    color: Theme.of(context).cardColor,
                     borderRadius: BorderRadius.circular(20),
                     boxShadow: const [
                       BoxShadow(
@@ -182,7 +187,7 @@ class _LoginState extends State<Login> with TickerProviderStateMixin {
                       ),
                       const SizedBox(height: 20),
                       TextField(
-                        style: TextStyle(color: Colors.black),
+                        // style: TextStyle(color: Colors.black),
                         controller: _emailController,
                         keyboardType: TextInputType.emailAddress,
                         decoration: InputDecoration(
@@ -253,10 +258,26 @@ class _LoginState extends State<Login> with TickerProviderStateMixin {
                                   ),
                                 ),
                       ),
-                      const SizedBox(height: 20),
+                      Align(
+                        alignment: Alignment(1.2, 1.2),
+                        child: TextButton(
+                          onPressed: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => ForgotPasswordScreen(),
+                              ),
+                            );
+                          },
+                          // child: Text('forgot_password'.tr()),
+                          child: Text("Forgot Password?"),
+                        ),
+                      ),
+
+                      // const SizedBox(height: 20),
                       Text(
                         "Don't have an account?",
-                        style: TextStyle(fontSize: 14, color: Colors.grey[700]),
+                        style: TextStyle(fontSize: 14, ),
                       ),
                       TextButton(
                         onPressed: () {
@@ -268,11 +289,75 @@ class _LoginState extends State<Login> with TickerProviderStateMixin {
                         child: const Text(
                           "Create an Account",
                           style: TextStyle(
+                            fontSize: 16,
                             color: Colors.green,
                             fontWeight: FontWeight.w600,
                           ),
                         ),
                       ),
+                      const SizedBox(height: 10,),
+                      ElevatedButton.icon(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(
+                            vertical: 12,
+                            horizontal: 20,
+                          ),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(30),
+                          ),
+                          side: BorderSide(color: Colors.grey),
+                        ),
+                        icon: Image.asset(
+                          'assets/images/google.webp',
+                          height: 24,
+                        ), // Add Google logo to your assets
+                        label: Text(
+                          'Sign in with Google',
+                          style: TextStyle(
+                            color: Colors.black,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        onPressed: () async {
+                          final userCredential =
+                              await GoogleSignInService.signInWithGoogle();
+                          if (userCredential != null) {
+                            // Check if the user exists in Firestore, else create
+                            final uid = userCredential.user!.uid;
+                            final doc =
+                                await FirebaseFirestore.instance
+                                    .collection('users')
+                                    .doc(uid)
+                                    .get();
+
+                            if (!doc.exists) {
+                              await FirebaseFirestore.instance
+                                  .collection('users')
+                                  .doc(uid)
+                                  .set({
+                                    'email': userCredential.user!.email,
+                                    'name': userCredential.user!.displayName,
+                                    'userType':
+                                        'Buyer', // default or let user choose
+                                    'createdAt': FieldValue.serverTimestamp(),
+                                  });
+                            }
+
+                            Navigator.pushReplacement(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => HomePage(),
+                              ),
+                            );
+                          } else {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text('Google Sign-In failed')),
+                            );
+                          }
+                        },
+                      ),
+
                     ],
                   ),
                 ),

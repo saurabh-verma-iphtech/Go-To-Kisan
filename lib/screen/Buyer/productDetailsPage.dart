@@ -2,6 +2,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:signup_login_page/screen/Buyer/buyerLogicHandler.dart';
+import 'package:signup_login_page/screen/Chat/screens/buyer/chat_screen.dart';
 import 'package:signup_login_page/screen/login.dart';
 
 class ProductDetailsPage extends StatefulWidget {
@@ -81,9 +83,7 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
     if (selectedRating == null || selectedRating == 0.0) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(
-            'rating'.tr(),
-          ),
+          content: Text('rating'.tr()),
           backgroundColor: Colors.red,
           behavior: SnackBarBehavior.floating,
         ),
@@ -117,11 +117,9 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
             .get();
 
     if (existingReview.exists) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text("review".tr()),
-        ),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text("review".tr())));
       return;
     }
 
@@ -158,18 +156,13 @@ class _ProductDetailsPageState extends State<ProductDetailsPage> {
           'timestamp': DateTime.now(),
         });
 
-
-
-
-ScaffoldMessenger.of(context).showSnackBar(
+    ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text('reviewUpdate'.tr()),
         backgroundColor: Colors.green,
         behavior: SnackBarBehavior.floating,
       ),
     );
-
-
 
     setState(() {
       isEditing = false;
@@ -178,7 +171,6 @@ ScaffoldMessenger.of(context).showSnackBar(
     });
 
     fetchReviews();
-
   }
 
   Future<void> deleteReview() async {
@@ -192,9 +184,8 @@ ScaffoldMessenger.of(context).showSnackBar(
         .doc(user.uid)
         .delete();
 
-
-      ScaffoldMessenger.of(context).showSnackBar(
-       SnackBar(
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
         content: Text('reviewDelete'.tr()),
         backgroundColor: Colors.green,
         behavior: SnackBarBehavior.floating,
@@ -218,7 +209,9 @@ ScaffoldMessenger.of(context).showSnackBar(
     final Timestamp? createdAtTime = product['createdAt'];
     String formattedDate = '';
     if (createdAtTime != null) {
-      formattedDate = DateFormat('dd MMM yyyy, hh:mm a').format(createdAtTime.toDate());
+      formattedDate = DateFormat(
+        'dd MMM yyyy, hh:mm a',
+      ).format(createdAtTime.toDate());
     }
 
     return Scaffold(
@@ -272,7 +265,7 @@ ScaffoldMessenger.of(context).showSnackBar(
                   TextSpan(
                     text: 'stock'.tr(),
                     style: TextStyle(
-                      color: isDark ? Colors.white :Colors.black,
+                      color: isDark ? Colors.white : Colors.black,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
@@ -284,28 +277,41 @@ ScaffoldMessenger.of(context).showSnackBar(
               ),
             ),
             const SizedBox(height: 10),
-            RichText(text: TextSpan(
-              children: [
-                TextSpan(text: "Description: ",style: TextStyle(color: isDark ? Colors.white :Colors.black,fontWeight: FontWeight.bold)),
-                TextSpan(text: product['description'] ?? 'No Description',
-              style:  TextStyle(fontSize: 14,color: isDark ? Colors.white :Colors.black)
-            )]
-            )),
-                        const SizedBox(height: 5),
+            RichText(
+              text: TextSpan(
+                children: [
+                  TextSpan(
+                    text: "Description: ",
+                    style: TextStyle(
+                      color: isDark ? Colors.white : Colors.black,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  TextSpan(
+                    text: product['description'] ?? 'No Description',
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: isDark ? Colors.white : Colors.black,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 5),
 
             if (formattedDate.isNotEmpty) ...[
               Text(
                 '${'Uploaded At'.tr()}: $formattedDate',
-                style:  TextStyle(
+                style: TextStyle(
                   fontSize: 14,
                   fontStyle: FontStyle.italic,
-                  fontWeight:FontWeight.bold
+                  fontWeight: FontWeight.bold,
                 ),
               ),
               const SizedBox(height: 8),
             ],
             const Divider(height: 30),
-             Text(
+            Text(
               'sellerDetail'.tr(),
               style: TextStyle(
                 fontSize: 18,
@@ -314,60 +320,240 @@ ScaffoldMessenger.of(context).showSnackBar(
               ),
             ),
             // const SizedBox(height: 15),
+
+            // Seller Details.............
             sellerData == null
                 ? const Center(child: CircularProgressIndicator())
                 : Padding(
                   padding: const EdgeInsets.only(left: 12.0, top: 8.0),
-                  child: Column(
+                  child: Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
+                    // mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      if (sellerData!['profileImage'] != null)
-                        CircleAvatar(
-                          radius: 40,
-                          backgroundImage: NetworkImage(
-                            sellerData!['profileImage'],
-                          ),
-                        )
-                      else
-                        const CircleAvatar(
-                          radius: 40,
-                          child: Icon(Icons.person),
-                        ),
-                      const SizedBox(height: 12),
-                      Row(
+                      Column(
                         children: [
-                          Text(
-                            'name'.tr(),
-                            style: TextStyle(fontWeight: FontWeight.bold),
+                          if (sellerData!['profileImage'] != null)
+                            ClipRRect(
+                              borderRadius: BorderRadius.circular(
+                                8,
+                              ), // Use 0 for sharp corners
+                              child: Image.network(
+                                sellerData!['profileImage'],
+                                width: 130,
+                                height: 110,
+                                fit: BoxFit.cover,
+                              ),
+                            )
+                          else
+                            Container(
+                              height: 110,
+                              width: 130,
+                              decoration: BoxDecoration(
+                                color: Color.fromARGB(255, 153, 203, 154),
+                                
+                                borderRadius: BorderRadius.circular(8)
+                              ),
+                              
+                              child: Icon(
+                                Icons.person,
+                                size: 100,
+                              ),
+                            ),
+                          const SizedBox(height: 12),
+
+                          // Communication buttons in a row
+                          Padding(
+                            padding: const EdgeInsets.all(10.0),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                GestureDetector(
+                                  onTap: () {
+                                    if (FirebaseAuth.instance.currentUser ==
+                                        null) {
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (_) => const Login(),
+                                        ),
+                                      );
+                                    } else {
+                                      launchWhatsApp(
+                                        context,
+                                        sellerData!['phoneNumber'],
+                                      );
+                                    }
+                                  },
+                                  child: Image.asset(
+                                    'assets/whatsapp.png',
+                                    height: 28,
+                                  ),
+                                ),
+                                SizedBox(width: 20,),
+                                GestureDetector(
+                                  onTap: () {
+                                    if (FirebaseAuth.instance.currentUser ==
+                                        null) {
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (_) => const Login(),
+                                        ),
+                                      );
+                                    } else {
+                                      launchSMS(
+                                        context,
+                                        sellerData!['phoneNumber'],
+                                      );
+                                    }
+                                  },
+                                  child: Icon(
+                                    Icons.sms,
+                                    size: 31,
+                                    color: Colors.green,
+                                  ),
+                                ),
+                                SizedBox(width: 20),
+                                GestureDetector(
+                                  onTap: () async {
+                                    final currentUser =
+                                        FirebaseAuth.instance.currentUser;
+                                    if (currentUser == null) {
+                                      // User is not logged in, show a message or navigate to login
+                                      ScaffoldMessenger.of(
+                                        context,
+                                      ).showSnackBar(
+                                        SnackBar(
+                                          content: Text(
+                                            'Please login to start chat',
+                                          ),
+                                        ),
+                                      );
+                                      return;
+                                    }
+
+                                    final firestore =
+                                        FirebaseFirestore.instance;
+                                    final buyerId = currentUser.uid;
+                                    final sellerId =
+                                        product['sellerId']; // make sure your product map has sellerId
+
+                                    try {
+                                      // Search for existing chat
+                                      final existingChatsQuery =
+                                          await firestore
+                                              .collection('chats')
+                                              .where(
+                                                'buyerId',
+                                                isEqualTo: buyerId,
+                                              )
+                                              .where(
+                                                'sellerId',
+                                                isEqualTo: sellerId,
+                                              )
+                                              .limit(1)
+                                              .get();
+
+                                      String chatId;
+
+                                      if (existingChatsQuery.docs.isNotEmpty) {
+                                        // Chat exists
+                                        chatId =
+                                            existingChatsQuery.docs.first.id;
+                                      } else {
+                                        // Create new chat
+                                        final newChatDoc = await firestore
+                                            .collection('chats')
+                                            .add({
+                                              'buyerId': buyerId,
+                                              'sellerId': sellerId,
+                                              'lastMessage': '',
+                                              'lastMessageTime':
+                                                  FieldValue.serverTimestamp(),
+                                              'createdAt':
+                                                  FieldValue.serverTimestamp(),
+                                            });
+                                        chatId = newChatDoc.id;
+                                      }
+
+                                      // Navigate to BuyerChatScreen with chatId
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder:
+                                              (_) => BuyerChatScreen(
+                                                currentUserId: buyerId,
+                                                chatId: chatId,
+                                              ),
+                                        ),
+                                      );
+                                    } catch (e) {
+                                      print('Error navigating to chat: $e');
+                                      ScaffoldMessenger.of(
+                                        context,
+                                      ).showSnackBar(
+                                        SnackBar(
+                                          content: Text('Failed to start chat'),
+                                        ),
+                                      );
+                                    }
+                                  },
+
+                                  child: Icon(
+                                    Icons.send_outlined,
+                                    size: 30,
+                                    color: Colors.green,
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
-                          Text('${sellerData!['name'] ?? ''}'),
                         ],
                       ),
-                      Row(
+                      SizedBox(width: 20),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                           Text(
-                            'contact'.tr(),
-                            style: TextStyle(fontWeight: FontWeight.bold),
+                          Row(
+                            children: [
+                              Text(
+                                'name'.tr(),
+                                style: TextStyle(fontWeight: FontWeight.bold),
+                              ),
+                              Text('${sellerData!['name'] ?? ''}'),
+                            ],
                           ),
-                          Text('${sellerData!['phoneNumber'] ?? ''}'),
-                        ],
-                      ),
-                      Row(
-                        children: [
-                           Text(
-                            'address'.tr(),
-                            style: TextStyle(fontWeight: FontWeight.bold),
+                          SizedBox(height: 4,),
+                          Row(
+                            children: [
+                              Text(
+                                'contact'.tr(),
+                                style: TextStyle(fontWeight: FontWeight.bold),
+                              ),
+                              Text('${sellerData!['phoneNumber'] ?? ''}'),
+                            ],
                           ),
-                          Text('${sellerData!['address'] ?? ''}'),
-                        ],
-                      ),
-                      Row(
-                        children: [
-                           Text(
-                            'pincode'.tr(),
-                            style: TextStyle(fontWeight: FontWeight.bold),
+                          SizedBox(height: 4),
+                          Row(
+                            children: [
+                              Text(
+                                'address'.tr(),
+                                style: TextStyle(fontWeight: FontWeight.bold),
+                              ),
+                              Text('${sellerData!['address'] ?? ''}'),
+                            ],
                           ),
-                          Text('${sellerData!['pincode'] ?? ''}'),
+                          SizedBox(height: 4),
+                          Row(
+                            children: [
+                              Text(
+                                'pincode'.tr(),
+                                style: TextStyle(fontWeight: FontWeight.bold),
+                              ),
+                              Text('${sellerData!['pincode'] ?? ''}'),
+                            ],
+                          ),
                         ],
                       ),
                     ],
@@ -380,7 +566,7 @@ ScaffoldMessenger.of(context).showSnackBar(
             ),
             Row(
               children: [
-                 Text(
+                Text(
                   'avgRating'.tr(),
                   style: TextStyle(fontWeight: FontWeight.bold),
                 ),
@@ -444,7 +630,7 @@ ScaffoldMessenger.of(context).showSnackBar(
                   );
                 },
                 icon: const Icon(Icons.login, color: Colors.white, size: 20),
-                label:  Text(
+                label: Text(
                   'login'.tr(),
                   style: TextStyle(color: Colors.white),
                 ),
@@ -566,10 +752,8 @@ ScaffoldMessenger.of(context).showSnackBar(
                               ],
                             ),
                           ),
-
                         );
                       }).toList(),
-
                 ),
           ],
         ),

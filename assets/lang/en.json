@@ -1,13 +1,18 @@
 {
   "name": "Name: ",
   "contact": "Contact: ",
+  "chats": "Chats",
+  "email": "Email Address: ",
+  "edit_details": "Edit Details",
   "address": "Address: ",
   "pincode": "Pincode: ",
+  "phone": "Phone: ",
   "title": "Go To Kisan",
   "login": "Login",
-  "signup": "Sign Up",
   "logout": "Logout",
+  "signup": "Sign Up",
   "profile": "Profile",
+  "welcomeU": "Welcome, ",
   "price": "Price",
   "go_to_kisan": "Go To Kisan",
   "welcome": "Welcome to Go To Kisan",
@@ -21,6 +26,7 @@
   "stock": "Stock: ",
   "sellerDetail": "Seller Details",
   "rr": "Ratings & Reviews",
+  "role": "Role: ",
   "avgRating": "Average Rating: ",
   "writeReview": "Write your review",
   "logForReview": "Login to write a review.",
@@ -30,19 +36,19 @@
   "news": "News",
   "bookmark": "Bookmarks",
   "addBookmark": "Added to bookmarks",
-  "noBookmark":"No bookmarks yet",
+  "noBookmark": "No bookmarks yet",
   "category": "Select Category",
   "noNews": "No news available",
   "noTitle": "No Title",
   "fullArticle": "Tap to read full article...",
 
   "agriNews": "Agri News",
+  "agriweather": "Weather",
 
-  
-  "amaranth":"Amaranth",
-  "brown rice":"Brown Rice",
-  "bulgur":"Bulgur",
-  "bulgur rice":"बुलगुर चावल",
+  "amaranth": "Amaranth",
+  "brown rice": "Brown Rice",
+  "bulgur": "Bulgur",
+  "bulgur rice": "बुलगुर चावल",
   "Barley": "Barley",
   "Black Gram": "Black Gram",
   "Buckwheat": "Buckwheat",
@@ -71,7 +77,7 @@
   "कनाडा चावल": "Wild rice",
   "जंगली चावल": "Wild rice",
   "Wild rice": "जंगली चावल",
-  "भूरे रंग के चावल":"Broen Rice",
+  "भूरे रंग के चावल": "Broen Rice",
 
   "wheat": "Wheat",
   "rice": "Rice",
@@ -113,5 +119,7 @@
   "groundnut": "Groundnut",
   "sunflower seed": "Sunflower Seed",
   "safflower": "Safflower",
-  "niger seed": "Niger Seed"
+  "niger seed": "Niger Seed",
+
+  "wild rice":"Wild Rice"
 }
