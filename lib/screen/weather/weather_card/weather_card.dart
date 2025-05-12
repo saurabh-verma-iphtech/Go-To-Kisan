@@ -277,7 +277,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:easy_localization/easy_localization.dart';
-import 'package:signup_login_page/screen/Weather/models/weather_model.dart';
+import 'package:signup_login_page/screen/weather/models/weather_model.dart';
 
 class WeatherCard extends StatelessWidget {
   final Weather weather;
@@ -371,9 +371,7 @@ class WeatherCard extends StatelessWidget {
                       BlendMode.darken,
                     ),
                     child: Image.asset(
-                      isDayTime
-                          ? "assets/images/day.png"
-                          : "assets/images/night.png",
+                      isDayTime ? "assets/weather.png" : "assets/night.png",
                       fit: BoxFit.cover,
                     ),
                   ),
@@ -617,7 +615,9 @@ class WeatherCard extends StatelessWidget {
             fontWeight: FontWeight.w500,
           ),
         ),
-        Text(label, style: const TextStyle(fontSize: 12, color: Colors.white),
+        Text(
+          label,
+          style: const TextStyle(fontSize: 12, color: Colors.white),
         ),
       ],
     );

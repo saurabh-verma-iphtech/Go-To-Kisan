@@ -34,7 +34,7 @@ class Weather {
       cityName: json['name'],
       description: json['weather'][0]['description'],
       icon: json['weather'][0]['icon'],
-      temprature: json['main']['temp'].toDouble(),
+      temprature: json['main']['temp'],
       tempMax: json['main']['temp_max'],
       tempMin: json['main']['temp_min'],
       humidity: json['main']['humidity'],

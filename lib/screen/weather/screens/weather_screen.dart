@@ -294,8 +294,8 @@ import 'package:geolocator/geolocator.dart';
 import 'package:intl/intl.dart';
 import 'package:http/http.dart' as http;
 import 'package:permission_handler/permission_handler.dart';
-import 'package:signup_login_page/screen/Weather/models/weather_model.dart';
-import 'package:signup_login_page/screen/Weather/weather_card/weather_card.dart';
+import 'package:signup_login_page/screen/weather/models/weather_model.dart';
+import 'package:signup_login_page/screen/weather/weather_card/weather_card.dart';
 
 class WeatherHomePage extends StatefulWidget {
   const WeatherHomePage({Key? key}) : super(key: key);
@@ -455,155 +455,149 @@ class _WeatherHomePageState extends State<WeatherHomePage>
   @override
   Widget build(BuildContext context) {
     final isDayTime = DateTime.now().hour > 6 && DateTime.now().hour < 18;
-    return GestureDetector(
-      onTap: () => FocusScope.of(context).unfocus(),
-      child: Scaffold(
-        appBar: AppBar(
-          title: const Text("🌤️ Weather Info"),
-          backgroundColor: Colors.transparent,
-          elevation: 0,
-          centerTitle: true,
-        ),
-        extendBodyBehindAppBar: true,
-      
-        body: Container(
-          decoration: BoxDecoration(
-            gradient: LinearGradient(colors: isDayTime
-                ? [Colors.lightBlue.shade200, const Color.fromARGB(255, 242, 214, 114)]
-                : [const Color.fromARGB(255, 67, 115, 157), const Color.fromARGB(199, 27, 96, 51)],
-            // gradient: LinearGradient(
-            //   colors:
-            //       isDayTime
-            //           ? [const Color.fromARGB(255, 67, 115, 157), const Color.fromARGB(199, 27, 96, 51)]
-            //           : [Colors.indigo.shade900, Colors.black87],
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-            ),
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text("🌤️ Weather Info"),
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        centerTitle: true,
+      ),
+      extendBodyBehindAppBar: true,
+
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(colors: isDayTime
+              ? [Colors.lightBlue.shade200, const Color.fromARGB(255, 242, 214, 114)]
+              : [const Color.fromARGB(255, 112, 116, 160), const Color.fromARGB(221, 31, 30, 30)],
+          // gradient: LinearGradient(
+          //   colors:
+          //       isDayTime
+          //           ? [const Color.fromARGB(255, 112, 116, 160), const Color.fromARGB(221, 31, 30, 30)]
+          //           : [Colors.indigo.shade900, Colors.black87],
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
           ),
-          child: SafeArea(
-            child: RefreshIndicator(
-              backgroundColor: Colors.black,
-              onRefresh: _loadInitialWeather,
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  children: [
-                    Row(
-                      children: [
-                        Expanded(
-                          child: TextField(
-                            controller: _searchController,
-                            decoration: InputDecoration(
-                              prefixIcon: Icon(Icons.location_city_outlined,color: Colors.white,),
-                              hintText: "Search by city",
-                              hintStyle: TextStyle(color: Colors.white),
-                              filled: true, // <-- Add this
-                              fillColor: const Color.fromARGB(255, 108, 108, 108).withOpacity(0.1),
-                              border: OutlineInputBorder(
-                                borderSide: BorderSide(
-                                  color: Colors.white,
-                                ),
-                                borderRadius: BorderRadius.circular(16)
+        ),
+        child: SafeArea(
+          child: RefreshIndicator(
+            backgroundColor: Colors.black,
+            onRefresh: _loadInitialWeather,
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                children: [
+                  Row(
+                    children: [
+                      Expanded(
+                        child: TextField(
+                          controller: _searchController,
+                          decoration: InputDecoration(
+                            prefixIcon: Icon(Icons.location_city_outlined,color: Colors.white54,),
+                            hintText: "Search by city",
+                            hintStyle: TextStyle(color: Colors.white54),
+                            fillColor: Colors.white,
+                            border: OutlineInputBorder(
+                              borderSide: BorderSide(
+                                color: Colors.white,
                               ),
-                              enabledBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(16),
-                                borderSide: BorderSide(color: const Color.fromARGB(181, 89, 201, 252),
-                                width: 2
-                                ),
-                              ),
-                              focusedBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(16),
-                                borderSide: BorderSide(
-                                  color: const Color.fromARGB(196, 242, 214, 114),
-                                  width: 2,
-                                ),
-                              ),
-                              suffixIcon: IconButton(
-                                icon: const Icon(Icons.search),
-                                onPressed: () {
-                                  final city = _searchController.text.trim();
-                                  if (city.isNotEmpty) _fetchWeatherByCity(city);
-                                },
+                              borderRadius: BorderRadius.circular(16)
+                            ),
+                            enabledBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(16),
+                              borderSide: BorderSide(color: Colors.grey.shade400),
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(16),
+                              borderSide: BorderSide(
+                                color: const Color.fromARGB(255, 221, 221, 221),
+                                width: 2,
                               ),
                             ),
-                            onSubmitted: (value) {
-                              if (value.trim().isNotEmpty) {
-                                _fetchWeatherByCity(value.trim());
-                              }
-                            },
+                            suffixIcon: IconButton(
+                              icon: const Icon(Icons.search),
+                              onPressed: () {
+                                final city = _searchController.text.trim();
+                                if (city.isNotEmpty) _fetchWeatherByCity(city);
+                              },
+                            ),
                           ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 20),
-                    if (_isLoading)
-                      const Center(child: CircularProgressIndicator())
-                    else if (_weather == null)
-                      const Center(child: Text("No weather data"))
-                    else
-                      Expanded(
-                        child: SingleChildScrollView(
-                          child: Column(
-                            children: [
-                              if (_locationDenied && _isDefaultWeather)
-                                WeatherCard(
-                                  weather: _weather!,
-                                  isDefaultLocation: true,
-                                  onRetryLocation: () async {
-                                    PermissionStatus permission =
-                                        await Permission.location.request();
-                                    if (permission.isGranted) {
-                                      setState(() => _locationDenied = false);
-                                      Position position =
-                                          await Geolocator.getCurrentPosition();
-                                      await _fetchWeatherByLocation(
-                                        position.latitude,
-                                        position.longitude,
-                                      );
-                                    }
-                                  },
-                                  onOpenSettings: openAppSettings,
-                                )
-                              else
-                                Column(
-                                  crossAxisAlignment: CrossAxisAlignment.center,
-                                  children: [
-                                    RichText(
-                                      text: TextSpan(
-                                        style: const TextStyle(
-                                          fontSize: 18,
-                                          color: Colors.black,
-                                        ),
-                                        children: [
-                                          const TextSpan(
-                                            text: 'Current Weather: ',
-                                            style: TextStyle(
-                                              fontWeight: FontWeight.bold,
-                                            ),
-                                          ),
-                                          TextSpan(
-                                            text:
-                                                _weather?.description
-                                                    .toUpperCase() ??
-                                                '',
-                                            style: const TextStyle(
-                                              color: Color.fromARGB(255, 251, 251, 251),
-                                              fontStyle: FontStyle.italic
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                    const SizedBox(height: 10),
-                                    WeatherCard(weather: _weather!),
-                                  ],
-                                ),
-                            ],
-                          ),
+                          onSubmitted: (value) {
+                            if (value.trim().isNotEmpty) {
+                              _fetchWeatherByCity(value.trim());
+                            }
+                          },
                         ),
                       ),
-                  ],
-                ),
+                    ],
+                  ),
+                  const SizedBox(height: 20),
+                  if (_isLoading)
+                    const Center(child: CircularProgressIndicator())
+                  else if (_weather == null)
+                    const Center(child: Text("No weather data"))
+                  else
+                    Expanded(
+                      child: SingleChildScrollView(
+                        child: Column(
+                          children: [
+                            if (_locationDenied && _isDefaultWeather)
+                              WeatherCard(
+                                weather: _weather!,
+                                isDefaultLocation: true,
+                                onRetryLocation: () async {
+                                  PermissionStatus permission =
+                                      await Permission.location.request();
+                                  if (permission.isGranted) {
+                                    setState(() => _locationDenied = false);
+                                    Position position =
+                                        await Geolocator.getCurrentPosition();
+                                    await _fetchWeatherByLocation(
+                                      position.latitude,
+                                      position.longitude,
+                                    );
+                                  }
+                                },
+                                onOpenSettings: openAppSettings,
+                              )
+                            else
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.center,
+                                children: [
+                                  RichText(
+                                    text: TextSpan(
+                                      style: const TextStyle(
+                                        fontSize: 18,
+                                        color: Colors.black,
+                                      ),
+                                      children: [
+                                        const TextSpan(
+                                          text: 'Current Weather: ',
+                                          style: TextStyle(
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                        TextSpan(
+                                          text:
+                                              _weather?.description
+                                                  .toUpperCase() ??
+                                              '',
+                                          style: const TextStyle(
+                                            color: Color.fromARGB(255, 251, 251, 251),
+                                            fontStyle: FontStyle.italic
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  const SizedBox(height: 10),
+                                  WeatherCard(weather: _weather!),
+                                ],
+                              ),
+                          ],
+                        ),
+                      ),
+                    ),
+                ],
               ),
             ),
           ),

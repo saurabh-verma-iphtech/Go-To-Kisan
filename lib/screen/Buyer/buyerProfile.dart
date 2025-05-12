@@ -1,4 +1,3 @@
-import 'package:easy_localization/easy_localization.dart';
 import 'package:firebase_auth/firebase_auth.dart' as fb_auth;
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -164,7 +163,7 @@ class _BuyerDashboardState extends State<BuyerDashboard> {
     return Scaffold(
       backgroundColor: isDark ? Colors.black : const Color(0xFFF7FFF7),
       appBar: AppBar(
-        title: const Text("profile").tr(),
+        title: const Text("Profile", ),
       ),
       body:
           isLoading
@@ -230,8 +229,8 @@ class _BuyerDashboardState extends State<BuyerDashboard> {
                           RichText(
                             text: TextSpan(
                               children: [
-                                TextSpan(
-                                  text: 'welcomeU'.tr(),
+                                const TextSpan(
+                                  text: 'Welcome, ',
                                   style: TextStyle(
                                     color: Colors.grey,
                                     fontSize: 22,
@@ -263,15 +262,15 @@ class _BuyerDashboardState extends State<BuyerDashboard> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            buildInfoTile("email".tr(), buyerEmail, Icons.email),
-                            buildInfoTile("phone".tr(), buyerPhone, Icons.phone),
-                            buildInfoTile("address".tr(), buyerAddress, Icons.home),
+                            buildInfoTile("Email", buyerEmail, Icons.email),
+                            buildInfoTile("Phone", buyerPhone, Icons.phone),
+                            buildInfoTile("Address", buyerAddress, Icons.home),
                             buildInfoTile(
-                              "pincode".tr(),
+                              "Pincode",
                               buyerPincode,
                               Icons.location_on,
                             ),
-                            buildInfoTile("role".tr(), buyerRole, Icons.badge),
+                            buildInfoTile("Role", buyerRole, Icons.badge),
                           ],
                         ),
                       ),
@@ -299,7 +298,7 @@ class _BuyerDashboardState extends State<BuyerDashboard> {
                         ),
                       ),
                       icon: const Icon(Icons.edit),
-                      label:  Text("edit_details".tr()),
+                      label: const Text("Edit Details"),
                     ),
                     const SizedBox(height: 30),
                     Center(
@@ -312,7 +311,7 @@ class _BuyerDashboardState extends State<BuyerDashboard> {
                           );
                         },
                         icon: const Icon(Icons.logout),
-                        label: Text("logout".tr()),
+                        label: const Text("Log Out"),
                         style: TextButton.styleFrom(
                           backgroundColor: Colors.red,
                           foregroundColor: Colors.white,
