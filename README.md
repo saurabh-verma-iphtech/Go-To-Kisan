@@ -1,16 +1,65 @@
-# signup_login_page
+🚜 Go To Kisan — Empowering Farmers & Buyers 🌾
 
-A new Flutter project.
+Go To Kisan is a cross-platform Flutter app that bridges the gap between farmers (sellers) and buyers, simplifies order management, and tracks on-field employee attendance—with intuitive UI, real-time features, and robust state management.
 
-## Getting Started
+🌟 Project Highlights
 
-This project is a starting point for a Flutter application.
+🔄 Role-Based Dashboards
 
-A few resources to get you started if this is your first Flutter project:
+Buyer: Browse produce, place orders, chat directly with sellers.
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
+Seller: Manage inventory, accept orders, communicate with buyers.
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+💬 Real-Time Chat
+
+Instant messaging powered by Cloud Firestore.
+
+⏱️ Attendance & Hours Tracking
+
+Check-in/check-out timers, working-hour charts with fl_chart.
+
+Early-checkout workflow: require reason before 9h30m of work.
+
+📸 Profile & Image Handling
+
+Drag‑and‑drop uploads, camera/gallery picker, in-app cropping.
+
+🎨 Modern Theming & UI
+
+Light & Dark mode via Riverpod.
+
+Responsive layouts for mobile & web with Tailwind‑inspired styling.
+
+📂 File Upload Widget
+
+FieldWithButton supports multi‑platform drag‑and‑drop & previews.
+
+🧰 Tech Stack
+
+Category
+
+Tools & Libraries
+
+Framework
+
+Flutter, Dart
+
+State
+
+Riverpod
+
+Backend
+
+Firebase Auth, Cloud Firestore
+
+Charts
+
+fl_chart, intl
+
+Image Tools
+
+image_picker, image_cropper
+
+Utilities
+
+intl (dates), responsive_design, custom_icons
