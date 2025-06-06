@@ -1,671 +1,783 @@
 import 'dart:async';
-
-import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
-import 'package:signup_login_page/screen/Buyer/productDetailsPage.dart';
-import 'package:signup_login_page/screen/Buyer/profile.dart';
-import 'package:signup_login_page/screen/login.dart';
-import 'package:signup_login_page/screen/signup.dart';
-import 'package:signup_login_page/services/MicSpeakerCode.dart';
-import 'package:url_launcher/url_launcher.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
+import 'dart:math';
 import 'package:carousel_slider/carousel_slider.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:easy_localization/easy_localization.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:signup_login_page/News/Screens/newsUI2.dart';
+import 'package:signup_login_page/Theme/theme_provider.dart';
+import 'package:signup_login_page/screen/Buyer/buyerLogicHandler.dart';
+import 'package:signup_login_page/screen/Buyer/wishlistPage.dart';
+import 'package:signup_login_page/screen/Buyer/favouriteButton.dart';
+import 'package:signup_login_page/screen/Buyer/buyerProfile.dart';
+import 'package:signup_login_page/screen/Review%20System/reviewService.dart';
+import 'package:signup_login_page/screen/weather/screens/weather_screen.dart';
 import 'package:speech_to_text/speech_to_text.dart' as stt;
-import 'package:signup_login_page/screen/home.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import '../screen/login.dart';
+import '../screen/signup.dart';
+import '../screen/Buyer/productDetailsPage.dart';
+import 'package:badges/badges.dart' as badges;
 
 class HomePage extends StatefulWidget {
-  HomePage({super.key});
-
+  const HomePage({super.key});
   @override
   State<HomePage> createState() => _HomePageState();
 }
 
 class _HomePageState extends State<HomePage> {
+  // UI data
   final List<String> imageList = [
-    'https://eg72s2n2avc.exactdn.com/wp-content/uploads/2022/09/sunset-and-wheat-field-wallpaper-hd-beautiful-desktop-background-hd-wallpapers-of-sunset-field-free-download.jpg',
-    'https://images.livemint.com/rf/Image-621x414/LiveMint/Period2/2016/10/18/Photos/Processed/maha1-kvDH--621x414@LiveMint.JPG',
-    'https://images.pexels.com/photos/96715/pexels-photo-96715.jpeg?cs=srgb&dl=pexels-alejandro-barron-21404-96715.jpg&fm=jpg',
-    'https://thumbs.dreamstime.com/b/different-corn-plantation-524311.jpg',
-    'https://pressinstitute.in/wp-content/uploads/2023/09/img-43.jpg',
+    'assets/kisan/kisan1.jpg',
+    'assets/kisan/kisan2.jpg',
+    'assets/kisan/kisan3.jpg',
+    'assets/kisan/kisan4.jpg',
+    'assets/kisan/kisan5.jpeg',
   ];
 
-  // *******************************************************************
-  TextEditingController _searchController = TextEditingController();
+
+
+
+  int cartItemCount = 0;
+  // Search & voice
+  final TextEditingController _searchController = TextEditingController();
+  final FocusNode _searchFocus = FocusNode();
   String searchQuery = '';
   Timer? _debounce;
-
-  // late stt.SpeechToText _speech;
+  late stt.SpeechToText _speech;
   bool _isListening = false;
-  String _voiceInput = '';
-  stt.SpeechToText _speech = stt.SpeechToText();
-  String _localeId = 'en_IN'; // default fallback
+  String _localeId = 'en_IN';
 
   @override
   void initState() {
     super.initState();
+    _speech = stt.SpeechToText();
     _initSpeech();
   }
 
-  void _initSpeech() async {
-    bool available = await _speech.initialize();
-
-    if (available) {
-      // Fetch supported locales
-      List<stt.LocaleName> locales = await _speech.locales();
-
-      // Get system locale
-      final systemLocale = await _speech.systemLocale();
-
-      // Find a matching locale from the supported list
-      _localeId = systemLocale?.localeId ?? 'en_IN';
-
-      print('🌍 Using locale: $_localeId');
+  Future<void> _initSpeech() async {
+    if (await _speech.initialize()) {
+      final sys = await _speech.systemLocale();
+      _localeId = sys?.localeId ?? _localeId;
     }
   }
 
-  void _startListening() async {
-    bool available = await _speech.initialize(
-      onStatus: (status) => print('Speech status: $status'),
-      onError: (error) => print('Speech error: $error'),
-    );
-
-    if (available) {
+  void _toggleListening() async {
+    if (_isListening) {
+      _speech.stop();
+      setState(() => _isListening = false);
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Stopped listening')));
+    } else if (await _speech.initialize()) {
       setState(() => _isListening = true);
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Listening...')));
       _speech.listen(
         localeId: _localeId,
-        onResult: (result) {
+        onResult: (res) {
           setState(() {
-            _voiceInput = result.recognizedWords;
-            _searchController.text = _voiceInput;
-            searchQuery = _voiceInput;
+            _searchController.text = res.recognizedWords;
+            searchQuery = res.recognizedWords;
           });
         },
       );
     }
   }
 
-  void _stopListening() {
-    _speech.stop();
-    setState(() => _isListening = false);
+  // Create this helper widget for the badge
+  Widget buildWishlistBadge(int count) {
+    return Padding(
+      padding: const EdgeInsets.only(right: 0.0),
+      child: badges.Badge(
+        position: badges.BadgePosition.topEnd(top: -5, end: -5),
+        showBadge: count > 0,
+        badgeContent: Text(
+          '$count',
+          style: const TextStyle(color: Colors.white, fontSize: 10),
+        ),
+        badgeStyle: const badges.BadgeStyle(
+          badgeColor: Colors.red,
+          padding: EdgeInsets.all(6),
+        ),
+        child: IconButton(
+          icon: Icon(Icons.favorite),
+          onPressed: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => WishlistPage()),
+            );
+          },
+        ),
+      ),
+    );
   }
+
+  bool _showSearch = false; // new
 
   @override
   void dispose() {
     _debounce?.cancel();
+    _searchController.dispose();
+    _searchFocus.dispose();
     super.dispose();
   }
 
-  // *******************************************************************
+  bool get _isSearching =>
+      _searchFocus.hasFocus || searchQuery.trim().isNotEmpty;
 
-  // To get Seller Address
-  Future<Map<String, String>> getSellerContactDetails(String sellerId) async {
-    DocumentSnapshot sellerSnapshot =
-        await FirebaseFirestore.instance
-            .collection('users')
-            .doc(sellerId)
-            .get();
-
-    if (sellerSnapshot.exists) {
-      final data = sellerSnapshot.data() as Map<String, dynamic>;
-      return {
-        'address': data['address'] ?? 'No Address',
-        'phoneNumber': data['phoneNumber'] ?? '',
-      };
-    }
-    return {'address': 'No Address', 'phoneNumber': ''};
-  }
-
-
-
-  String formatPhoneForWhatsapp(String rawPhone) {
-    final phone = rawPhone.trim().replaceAll(RegExp(r'\D'), '');
-    if (phone.length == 10) {
-      return '91$phone'; // Assuming India country code
-    }
-    return phone; // Return as-is if not 10 digits
-  }
-
-
-  // Function to launch WhatsApp
- Future<void> _launchWhatsApp(String rawPhone) async {
-    if (rawPhone.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Phone number not available')),
-      );
-      return;
-    }
-
-    final phoneNumber = formatPhoneForWhatsapp(rawPhone);
-    final Uri whatsappUri = Uri.parse("https://wa.me/$phoneNumber");
-
-    print('Launching WhatsApp with: $whatsappUri');
-
-    if (await canLaunchUrl(whatsappUri)) {
-      await launchUrl(whatsappUri, mode: LaunchMode.externalApplication);
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Could not launch WhatsApp')),
-      );
-    }
-  }
-
-
-String formatPhoneForSMS(String phone) {
-    phone = phone.replaceAll(RegExp(r'[^\d]'), ''); // remove any symbols/spaces
-    if (!phone.startsWith('91')) {
-      phone = '91$phone';
-    }
-    return phone;
-  }
-
-  Future<void> _launchSMS(String rawPhone) async {
-    final phoneNumber = formatPhoneForSMS(rawPhone); // see below
-
-    final Uri smsUri = Uri.parse("sms:$phoneNumber");
-
-    if (await canLaunchUrl(smsUri)) {
-      await launchUrl(smsUri, mode: LaunchMode.externalApplication);
-    } else {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Could not launch SMS')));
-    }
-  }
-
-
-  Future<void> _startChat(BuildContext context, String sellerId) async {
-    if (FirebaseAuth.instance.currentUser == null) {
-      Navigator.push(context, MaterialPageRoute(builder: (context) => Login()));
-      return;
-    }
-  }
 
   @override
   Widget build(BuildContext context) {
-    var time = DateTime.now();
-
-    final screenWidth = MediaQuery.of(context).size.width;
-    final screenHeight = MediaQuery.of(context).size.height;
-
-    final imageHeight =
-        screenWidth > 1000
-            ? 280
-            : screenWidth > 600
-            ? 220
-            : 180;
-
+    final w = MediaQuery.of(context).size.width;
+    // final h = MediaQuery.of(context).size.height;
+    final theme = Theme.of(context);
     return Scaffold(
+      backgroundColor: theme.scaffoldBackgroundColor,
+
       appBar: AppBar(
-        title: const Text(
-          'Go To Kisan',
-          style: TextStyle(fontWeight: FontWeight.bold),
-        ),
+        titleSpacing: 0,
+        // leadingWidth: 0,
+        title:
+            Padding(
+              padding: const EdgeInsets.only(bottom: 8.0),
+              child: Consumer(
+                        builder: (context, ref, _) {
+              final themeMode = ref.watch(themeProvider);
+              final isDark = themeMode == ThemeMode.dark;
+              
+              return Image.asset(
+                  isDark ? 'assets/kisan/logoL.png' : 'assets/kisan/logoD.png',
+                  width: 130,
+              );
+                        },
+                      ),
+            ),
         automaticallyImplyLeading: false,
-        backgroundColor: const Color.fromARGB(255, 47, 138, 47),
+        scrolledUnderElevation: 0,
         actions: [
-          FirebaseAuth.instance.currentUser != null
-              ? PopupMenuButton<String>(
-                onSelected: (value) {
-                  if (value == 'profile') {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (context) => BuyerDashboard()),
-                    );
-                  } else if (value == 'logout') {
-                    FirebaseAuth.instance.signOut();
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Logged out successfully'),
-                        backgroundColor: Colors.green,
-                      ),
-                    );
-                    Navigator.pushReplacement(
-                      context,
-                      MaterialPageRoute(builder: (_) => HomePage()),
-                    );
-                  }
-                },
-                icon: const Icon(Icons.menu),
-                itemBuilder:
-                    (BuildContext context) => <PopupMenuEntry<String>>[
-                      const PopupMenuItem<String>(
-                        value: 'profile',
-                        child: Text('Profile'),
-                      ),
-                      const PopupMenuItem<String>(
-                        value: 'logout',
-                        child: Text('Logout'),
-                      ),
-                    ],
-              )
-              : PopupMenuButton<String>(
-                onSelected: (value) {
-                  if (value == "Login") {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (context) => Login()),
-                    );
-                  } else if (value == "Signup") {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (context) => Signup()),
-                    );
-                  }
-                },
-                itemBuilder:
-                    (context) => [
-                      const PopupMenuItem(value: "Login", child: Text("Login")),
-                      const PopupMenuItem(
-                        value: "Signup",
-                        child: Text("Signup"),
-                      ),
-                    ],
-              ),
-        ],
-      ),
-      body: Column(
-        children: [
-          // Top banner carousel
-          SizedBox(
-            width: MediaQuery.of(context).size.width,
-            height: screenWidth > 600 ? 300 : 200,
-            child: CarouselSlider(
-              options: CarouselOptions(
-                autoPlay: true,
-                autoPlayInterval: const Duration(seconds: 5),
-                aspectRatio: 16 / 9,
-                viewportFraction: 1.0,
-                enlargeCenterPage: true,
-                scrollPhysics: const BouncingScrollPhysics(),
-              ),
-              items:
-                  imageList.map((image) {
-                    return ClipRRect(
-                      child: Image.network(
-                        image,
-                        fit: BoxFit.cover,
-                        width: double.infinity,
-                        height: screenWidth > 600 ? 300 : 200,
-                      ),
-                    );
-                  }).toList(),
+          badges.Badge(
+            position: badges.BadgePosition.topEnd(top: -3, end: -18),
+            badgeAnimation: badges.BadgeAnimation.fade(),
+            badgeStyle: badges.BadgeStyle(
+              badgeColor: Colors.transparent,
+              padding: EdgeInsets.all(1),
+              elevation: 0,
             ),
-          ),
-          Padding(
-            padding: const EdgeInsets.all(10.0),
-            child: Column(
-              children: [
-                Text(
-                  "Welcome to Go To Kisan - Your one-stop solution for buying & selling agricultural products!",
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: screenWidth > 600 ? 18 : 14,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.black87,
-                  ),
-                ),
-                Card(
-                  elevation: 3,
-                  shadowColor: Colors.green,
-                  child: Padding(
-                    padding: const EdgeInsets.all(8.0),
-                    child: StreamBuilder<String>(
-                      stream: Stream.periodic(const Duration(seconds: 1), (_) {
-                        return DateFormat(
-                          'd MMMM y | hh:MM:ss a',
-                        ).format(DateTime.now());
-                      }),
-                      builder: (context, snapshot) {
-                        if (!snapshot.hasData)
-                          return const CircularProgressIndicator();
-                        return Text(
-                          snapshot.data!,
-                          style: const TextStyle(
-                            fontSize: 14,
-                            color: Colors.black,
-                          ),
-                        );
-                      },
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 0),
-            child: TextField(
-              controller: _searchController,
-              decoration: InputDecoration(
-                hintText: 'Search grains (in Hindi or English)...',
-                prefixIcon: Icon(Icons.search),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                suffixIcon: MicSpeakerWidget(
-                  onListeningStart: () {
-                    setState(() {
-                      _isListening = true;
-                    });
-                  },
-                  onListeningStop: () {
-                    setState(() {
-                      _isListening = false;
-                    });
-                  },
-                ),
-
-                // Add the MicSpeakerWidget here
-              ),
-              onChanged: (value) {
-                if (_debounce?.isActive ?? false) _debounce!.cancel();
-
-                _debounce = Timer(const Duration(milliseconds: 300), () {
-                  setState(() {
-                    searchQuery = value;
-                  });
-                });
+            badgeContent: Text("news".tr()),
+            child: IconButton(
+              icon: Icon(Icons.newspaper_outlined),
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => AgriNewsPage()),
+                );
               },
             ),
           ),
+          SizedBox(width: w / 35),
+          Consumer(
+            builder: (context, ref, _) {
+              final themeMode = ref.watch(themeProvider);
+              final isDark = themeMode == ThemeMode.dark;
 
-          // Always display products regardless of login status
+              return IconButton(
+                icon: Icon(
+                  isDark ? Icons.light_mode : Icons.dark_mode,
+                  color: isDark ? Colors.white : Colors.black,
+                ),
+                tooltip:
+                    isDark ? 'Switch to Light Mode' : 'Switch to Dark Mode',
+                onPressed: () => ref.read(themeProvider.notifier).toggleTheme(),
+              );
+            },
+          ),
+
+          // Wishlist Page....Icon
+          StreamBuilder<QuerySnapshot>(
+            stream:
+                FirebaseFirestore.instance
+                    .collection('users')
+                    .doc(FirebaseAuth.instance.currentUser?.uid)
+                    .collection('wishlist')
+                    .snapshots(),
+            builder: (context, snapshot) {
+              int count = snapshot.data?.docs.length ?? 0;
+              return buildWishlistBadge(count);
+            },
+          ),
+          //search icon
+          IconButton(
+            icon: Icon(_showSearch ? Icons.close : Icons.search),
+            onPressed: () {
+              setState(() {
+                _showSearch = !_showSearch;
+                if (!_showSearch) {
+                  _searchController.clear();
+                  searchQuery = '';
+                  _searchFocus.unfocus();
+                }
+              });
+            },
+          ),
+          PopupMenuButton<String>(
+            icon: const Icon(Icons.menu),
+            onSelected: (val) {
+              if (val == 'profile' &&
+                  FirebaseAuth.instance.currentUser != null) {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => BuyerDashboard()),
+                );
+              } else if (val == 'logout') {
+                FirebaseAuth.instance.signOut();
+                Navigator.pushReplacement(
+                  context,
+                  MaterialPageRoute(builder: (_) => const HomePage()),
+                );
+              } else if (val == 'Login') {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const Login()),
+                );
+              } else if (val == 'Signup') {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const Signup()),
+                );
+              } else if (val == 'weather') {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => WeatherHomePage()),
+                );
+              }
+            },
+            itemBuilder: (context) {
+              List<PopupMenuEntry<String>> items = [];
+
+              // If user is logged in
+              if (FirebaseAuth.instance.currentUser != null) {
+                items.addAll([
+                  PopupMenuItem(value: 'profile', child: Text('profile'.tr())),
+                  PopupMenuItem(value: 'logout', child: Text('logout'.tr())),
+                  PopupMenuItem(value: 'weather', child: Text('Weather'.tr())),
+
+                ]);
+              } else {
+                items.addAll([
+                  PopupMenuItem(value: 'Login', child: Text('login'.tr())),
+                  PopupMenuItem(value: 'Signup', child: Text('signup'.tr())),
+                                    PopupMenuItem(value: 'weather', child: Text('Weather'.tr())),
+
+                ]);
+              }
+
+              // Add language selector as a non-selectable PopupMenuItem
+              items.add(
+                PopupMenuItem<String>(
+                  enabled: false, // prevents it from being "selectable"
+                  child: DropdownButtonHideUnderline(
+                    child: DropdownButton<Locale>(
+                      value: context.locale,
+                      icon: const Icon(Icons.language),
+                      dropdownColor: Colors.white,
+                      onChanged: (Locale? locale) {
+                        if (locale != null) {
+                          context.setLocale(locale);
+                          Navigator.pop(
+                            context,
+                          ); // close the popup after selection
+                        }
+                      },
+                      items: const [
+                        DropdownMenuItem(
+                          value: Locale('en'),
+                          child: Text('English'),
+                        ),
+                        DropdownMenuItem(
+                          value: Locale('hi'),
+                          child: Text('हिंदी'),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              );
+
+              return items;
+            },
+          ),
+        ],
+      ),
+
+      body: Column(
+        children: [
+          // It will be visible only when _showSearch is true - Saurabh
+          if (_showSearch)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(12, 12, 12, 8),
+              child: TextField(
+                focusNode: _searchFocus,
+                controller: _searchController,
+                decoration: InputDecoration(
+                  hintText: 'search'.tr(),
+                  prefixIcon: const Icon(Icons.search),
+                  suffixIcon: IconButton(
+                    icon: Icon(_isListening ? Icons.mic : Icons.mic_none),
+                    onPressed: _toggleListening,
+                  ),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                ),
+                onChanged: (v) {
+                  _debounce?.cancel();
+                  _debounce = Timer(const Duration(milliseconds: 300), () {
+                    setState(() => searchQuery = v.trim());
+                  });
+                },
+              ),
+            ),
+
+          // 2) Expanded area: full home or filtered results
           Expanded(
             child: StreamBuilder<QuerySnapshot>(
               stream:
                   FirebaseFirestore.instance
                       .collection('products')
                       .orderBy('createdAt', descending: true)
+                      .where('approved', isEqualTo: true)
                       .snapshots(),
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
+              builder: (ctx, snap) {
+                if (snap.connectionState == ConnectionState.waiting) {
                   return const Center(child: CircularProgressIndicator());
                 }
-                if (snapshot.hasError) {
-                  return const Center(child: Text('Error loading products'));
-                }
-                if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+                final docs = snap.data?.docs ?? [];
+                if (docs.isEmpty) {
                   return const Center(child: Text('No products found'));
                 }
 
-                var allProducts = snapshot.data!.docs;
-
-                // Filter products based on search query (supports Hindi and English)
-                bool wordStartsWith(String text, String query) {
-                  return text
-                      .split(RegExp(r'\s+')) // split by spaces
-                      .any((word) => word.startsWith(query));
-                }
-
-                var products =
-                    allProducts.where((doc) {
+                final isSearching = _isSearching;
+                final filtered =
+                    docs.where((doc) {
+                      if (!isSearching) return true;
                       final name = (doc['name'] ?? '').toString().toLowerCase();
                       final desc =
                           (doc['description'] ?? '').toString().toLowerCase();
-                      final query = searchQuery.toLowerCase().trim();
-
-                      if (query.isEmpty)
-                        return true; // show all if search is empty
-
-                      return wordStartsWith(name, query) ||
-                          wordStartsWith(desc, query);
+                      final q = searchQuery.toLowerCase();
+                      return name.contains(q) || desc.contains(q);
                     }).toList();
 
-                return Padding(
-                  padding: const EdgeInsets.all(8.0),
-                  child: GridView.builder(
-                    padding: const EdgeInsets.all(5),
-                    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount:
-                          screenWidth > 1000
-                              ? 4
-                              : screenWidth > 600
-                              ? 3
-                              : 2,
-                      crossAxisSpacing: 10,
-                      mainAxisSpacing: 10,
-                      childAspectRatio:
-                          screenWidth < 400
-                              ? 0.55
-                              : 0.64, // Adjust for vertical space
-                    ),
-                    itemCount: products.length,
-                    itemBuilder: (context, index) {
-                      var product =
-                          products[index].data() as Map<String, dynamic>;
-                      List<dynamic> imageUrls = product['imageUrls'] ?? [];
-                      return FutureBuilder<Map<String, String>>(
-                        future: getSellerContactDetails(product['sellerId']),
-                        builder: (context, snapshot) {
-                          if (!snapshot.hasData) {
-                            return const Center(
-                              child: CircularProgressIndicator(),
-                            );
-                          }
-                          final sellerDetails = snapshot.data!;
-                          String address = sellerDetails['address']!;
-                          String phone = sellerDetails['phoneNumber']!;
+                if (isSearching && filtered.isEmpty) {
+                  return const Center(child: Text('No matching grains found'));
+                }
 
-                          return GestureDetector(
-                            onTap: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder:
-                                      (context) => ProductDetailsPage(
-                                        productData: product,
-                                      ),
-                                ),
-                              );
-                            },
-                            child: Card(
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              elevation: 4,
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  // Image carousel or fallback image
-                                  if (imageUrls.isNotEmpty)
-                                    ClipRRect(
-                                      borderRadius: const BorderRadius.only(
-                                        topLeft: Radius.circular(12),
-                                        topRight: Radius.circular(12),
-                                      ),
-                                      child: SizedBox(
-                                        height: screenWidth > 600 ? 160 : 120,
-                                        width: double.infinity,
-                                        child: CarouselSlider(
-                                          options: CarouselOptions(
-                                            height:
-                                                screenWidth > 600 ? 160 : 120,
-                                            autoPlay: true,
-                                            viewportFraction: 1.0,
-                                            enlargeCenterPage: false,
-                                          ),
-                                          items:
-                                              imageUrls.map((url) {
-                                                return Image.network(
-                                                  url,
-                                                  fit: BoxFit.fill,
-                                                  width: double.infinity,
-                                                );
-                                              }).toList(),
-                                        ),
-                                      ),
-                                    )
-                                  else if (product['imageUrl'] != null)
-                                    ClipRRect(
-                                      borderRadius: const BorderRadius.only(
-                                        topLeft: Radius.circular(12),
-                                        topRight: Radius.circular(12),
-                                      ),
-                                      child: Image.network(
-                                        product['imageUrl'],
-                                        width: double.infinity,
-                                        height: 120,
+                // FULL HOME: carousel + welcome + grid
+                if (!isSearching) {
+                  return Column(
+                    children: [
+                      // --- Full-width Carousel ---
+                      SizedBox(
+                        width: double.infinity,
+                        height: w > 600 ? 300 : 200,
+                        child: CarouselSlider(
+                          options: CarouselOptions(
+                            height: double.infinity,
+                            autoPlay: true,
+                            autoPlayInterval: const Duration(seconds: 5),
+                            viewportFraction: 1.0,
+                          ),
+                          items:
+                              imageList
+                                  .map(
+                                    (url) => SizedBox(
+                                      width: double.infinity,
+                                      child: Image.asset(
+                                        url,
                                         fit: BoxFit.cover,
                                       ),
-                                    )
-                                  else
-                                    const SizedBox(
-                                      height: 120,
-                                      child: Center(
-                                        child: Icon(
-                                          Icons.image_not_supported,
-                                          size: 40,
-                                        ),
-                                      ),
                                     ),
-                                  // Product details and communication buttons
-                                  Padding(
-                                    padding: const EdgeInsets.all(5.0),
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        // Product Name and Seller Address
-                                        Row(
-                                          mainAxisAlignment:
-                                              MainAxisAlignment.spaceBetween,
-                                          children: [
-                                            Expanded(
-                                              child: Text(
-                                                product['name'] ?? 'No Name',
-                                                maxLines: 1,
-                                                overflow: TextOverflow.ellipsis,
-                                                style: const TextStyle(
-                                                  fontSize: 14,
-                                                  fontWeight: FontWeight.bold,
-                                                ),
-                                              ),
-                                            ),
-                                            Text(
-                                              address.length > 10
-                                                  ? '${address.substring(0, 10)}...'
-                                                  : address,
-                                              maxLines: 2,
-                                              overflow: TextOverflow.ellipsis,
-                                              style: const TextStyle(
-                                                fontSize: 12,
-                                                color: Colors.red,
-                                                fontWeight: FontWeight.bold,
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                        const SizedBox(height: 4),
-                                        // Price
-                                        Text(
-                                          '₹${product['price'] ?? '0'} / ${product['unit']}',
-                                          style: const TextStyle(
-                                            fontSize: 13,
-                                            color: Colors.green,
-                                            fontWeight: FontWeight.bold,
-                                          ),
-                                        ),
-                                        const SizedBox(height: 4),
-                                        // Description
-                                        Text(
-                                          (product['description'] ?? '')
-                                                      .toString()
-                                                      .length >
-                                                  40
-                                              ? '${(product['description'] ?? '').toString().substring(0, 40)}...'
-                                              : product['description'] ?? '',
-                                          maxLines: 2,
-                                          overflow: TextOverflow.ellipsis,
-                                          style: const TextStyle(fontSize: 11),
-                                        ),
-                                        const SizedBox(height: 20),
-                                        // Communication Buttons
-                                        Center(
-                                          child: Row(
-                                            mainAxisAlignment:
-                                                MainAxisAlignment.spaceAround,
-                                            children: [
-                                              // WhatsApp Button
-                                              GestureDetector(
-                                                onTap: () {
-                                                  if (FirebaseAuth
-                                                          .instance
-                                                          .currentUser ==
-                                                      null) {
-                                                    Navigator.push(
-                                                      context,
-                                                      MaterialPageRoute(
-                                                        builder:
-                                                            (context) =>
-                                                                Login(),
-                                                      ),
-                                                    );
-                                                  } else {
-                                                    _launchWhatsApp(phone);
-                                                  }
-                                                },
-                                                child: Padding(
-                                                  padding: const EdgeInsets.all(
-                                                    4.0,
-                                                  ),
-                                                  child: Image.asset(
-                                                    'assets/whatsapp.png',
-                                                    height: screenHeight / 33,
-                                                  ),
-                                                ),
-                                              ),
-                                              // SMS Button
-                                              GestureDetector(
-                                                onTap: () {
-                                                  if (FirebaseAuth
-                                                          .instance
-                                                          .currentUser ==
-                                                      null) {
-                                                    Navigator.push(
-                                                      context,
-                                                      MaterialPageRoute(
-                                                        builder:
-                                                            (context) =>
-                                                                Login(),
-                                                      ),
-                                                    );
-                                                  } else {
-                                                    _launchSMS(phone);
-                                                  }
-                                                },
-                                                child: Padding(
-                                                  padding: const EdgeInsets.all(
-                                                    4.0,
-                                                  ),
-                                                  // child: Image.asset('assets/talk.png',height: screenHeight/30,),
-                                                  child: Icon(
-                                                    Icons.sms,
-                                                    color: Colors.green,
-                                                    size: screenHeight / 30,
-                                                  ),
-                                                ),
-                                              ),
-                                            ],
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ],
+                                  )
+                                  .toList(),
+                        ),
+                      ),
+
+                      Padding(
+                        padding: const EdgeInsets.all(10),
+                        child: Column(
+                          children: [
+                            Text(
+                              'welcome'.tr(),
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                fontSize: w > 600 ? 18 : 14,
+                                fontWeight: FontWeight.bold,
                               ),
                             ),
-                          );
-                        },
-                      );
-                    },
-                  ),
-                );
+                          ],
+                        ),
+                      ),
+
+                      // --- Grid of all products ---
+                      Expanded(child: _buildGrid(filtered)),
+                    ],
+                  );
+                }
+                // SEARCH RESULTS: just the filtered grid
+                return _buildGrid(filtered);
               },
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildGrid(List<QueryDocumentSnapshot> docs) {
+    final w = MediaQuery.of(context).size.width;
+
+    return RefreshIndicator(
+      onRefresh: () async {
+        setState(() {});
+      },
+      child: GridView.builder(
+        padding: const EdgeInsets.all(8),
+        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount:
+              w > 1000
+                  ? 4
+                  : w > 600
+                  ? 3
+                  : 2,
+          crossAxisSpacing: 10,
+          mainAxisSpacing: 10,
+          childAspectRatio: w < 400 ? 0.55 : 0.7,
+        ),
+        itemCount: docs.length,
+        itemBuilder: (c, i) {
+          final data = docs[i].data()! as Map<String, dynamic>;
+          final images = data['imageUrls'] as List<dynamic>? ?? [];
+          // Inside the _buildGrid method's itemBuilder:
+          return FutureBuilder<Map<String, String>>(
+            future: getSellerContactDetails(data['sellerId']),
+            builder: (c2, sellerSnap) {
+              if (!sellerSnap.hasData) {
+                return const Center(child: CircularProgressIndicator());
+              }
+              final seller = sellerSnap.data!;
+              return _ProductCard(
+                productId: docs[i].id, // Corrected variable reference
+                product: data,
+                images: images,
+                address:
+                    seller['address'] ?? 'Address not available', // Handle null
+                phone:
+                    seller['phoneNumber'] ??
+                    'Phone not available', // Handle null
+              );
+            },
+          );
+        },
+      ),
+    );
+  }
+}
+
+// Your existing ProductCard with full build method…
+class _ProductCard extends StatelessWidget {
+  final Map<String, dynamic> product;
+  final List<dynamic> images;
+  final String address;
+  final String phone;
+  final String productId;
+
+  const _ProductCard({
+    required this.productId,
+    required this.product,
+    required this.images,
+    required this.address,
+    required this.phone,
+  });
+  
+
+  @override
+  Widget build(BuildContext ctx) {
+    final w = MediaQuery.of(ctx).size.width;
+    final h = MediaQuery.of(ctx).size.height;
+    
+
+    // Fetching the current user's ID using Firebase Authentication
+    // final currentUserId = FirebaseAuth.instance.currentUser?.uid;
+
+    if (images.isNotEmpty) {
+    } else if (product['imageUrl'] != null) {
+    } else {}
+
+    // Calculate a responsive image height:
+    final imageHeight = w > 600 ? 160.0 : 120.0;
+
+    return GestureDetector(
+      onTap:
+          () => Navigator.push(
+            ctx,
+            MaterialPageRoute(
+              builder:
+                  (_) => ProductDetailsPage(
+                    productData: product,
+                    productId: productId,
+                  ),
+            ),
+          ),
+      child: Card(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        elevation: 4,
+        // Give the card a fixed aspect ratio so it shrinks/grows nicely:
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // 1) Image + Favorite overlay
+            Stack(
+              children: [
+                ClipRRect(
+                  borderRadius: const BorderRadius.vertical(
+                    top: Radius.circular(12),
+                  ),
+                  child: SizedBox(
+                    width: double.infinity,
+                    height: imageHeight,
+                    child:
+                        images.isNotEmpty
+                            ? CarouselSlider(
+                              options: CarouselOptions(
+                                height: imageHeight,
+                                autoPlay: true,
+                                viewportFraction: 1.0,
+                              ),
+                              items:
+                                  images
+                                      .map(
+                                        (url) => Image.network(
+                                          url,
+                                          fit: BoxFit.cover,
+                                          width: double.infinity,
+                                        ),
+                                      )
+                                      .toList(),
+                            )
+                            : (product['imageUrl'] != null
+                                ? Image.network(
+                                  product['imageUrl'],
+                                  fit: BoxFit.cover,
+                                  width: double.infinity,
+                                  height: imageHeight,
+                                )
+                                : Container(
+                                  width: double.infinity,
+                                  height: imageHeight,
+                                  color: Colors.grey[200],
+                                  child: const Icon(
+                                    Icons.image_not_supported,
+                                    size: 40,
+                                    color: Colors.grey,
+                                  ),
+                                )),
+                  ),
+                ),
+
+                // 2) Favorite icon in top-right
+                Positioned(
+                  top: 8,
+                  right: 8,
+                  child: Material(
+                    // so the circle ripple works if you want it
+                    color: Colors.white.withOpacity(0.7),
+                    shape: const CircleBorder(),
+                    child: Padding(
+                      padding: const EdgeInsets.all(4),
+                      child: FavoriteButton(productId: productId),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Builder(
+                            builder: (context) {
+                              // Get current language code
+                              final locale = context.locale.languageCode;
+
+                              // Get the base key for translation
+                              final rawName =
+                                  (product['name'] ?? 'unknown')
+                                      .toString()
+                                      .toLowerCase()
+                                      .trim();
+                              String translated = rawName.tr();
+
+                              // Capitalize only if locale is English
+                              if (locale == 'en' && translated.isNotEmpty) {
+                                translated =
+                                    translated[0].toUpperCase() +
+                                    translated.substring(1);
+                              }
+
+                              return Text(
+                                translated,
+                                overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 14,
+                                ),
+                              );
+                            },
+                          ),
+                        ),
+                        const SizedBox(width: 4),
+                        const Icon(
+                          Icons.location_on,
+                          size: 14,
+                          color: Colors.blue,
+                        ),
+                        Text(
+                          address.length > 12
+                              ? '${address.substring(0, 12)}…'
+                              : address,
+                          style: const TextStyle(
+                            fontSize: 11,
+                            color: Colors.red,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
+                    ),
+
+                    const SizedBox(height: 4),
+
+                    // Price
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          '₹${product['price'] ?? '0'} / ${product['unit']}',
+                          style: const TextStyle(
+                            color: Colors.green,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 12,
+                          ),
+                        ),
+                        // Add average rating display
+                        FutureBuilder<double>(
+                          future: ReviewService.getAverageRating(
+                            productId,
+                          ), // Use the service method
+                          builder: (context, snapshot) {
+                            if (snapshot.connectionState ==
+                                ConnectionState.waiting) {
+                              return const Text("Rating: ...");
+                            }
+                            if (snapshot.hasError) {
+                              return const Text("Rating: N/A");
+                            }
+
+                            final rating = snapshot.data ?? 0.0;
+                            return Row(
+                              children: [
+                                const Icon(
+                                  Icons.star,
+                                  color: Colors.green,
+                                  size: 16,
+                                ),
+                                const SizedBox(width: 4),
+                                Text(rating.toStringAsFixed(1)),
+                              ],
+                            );
+                          },
+                        ),
+                      ],
+                    ),
+
+                    const SizedBox(height: 4),
+
+                    // Description
+                    Text(
+                      (product['description'] ?? '').toString().substring(
+                            0,
+                            min(40, (product['description'] ?? '').length),
+                          ) +
+                          ((product['description'] ?? '').length > 40
+                              ? '…'
+                              : ''),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(fontSize: 10),
+                    ),
+
+                    const Spacer(),
+
+                    // Communication buttons in a row
+                    Padding(
+                      padding: const EdgeInsets.all(10.0),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceAround,
+                        children: [
+                          GestureDetector(
+                            onTap: () {
+                              if (FirebaseAuth.instance.currentUser == null) {
+                                Navigator.push(
+                                  ctx,
+                                  MaterialPageRoute(
+                                    builder: (_) => const Login(),
+                                  ),
+                                );
+                              } else {
+                                launchWhatsApp(ctx, phone);
+                              }
+                            },
+                            child: Image.asset(
+                              'assets/whatsapp.png',
+                              height: h / 31,
+                            ),
+                          ),
+                          GestureDetector(
+                            onTap: () {
+                              if (FirebaseAuth.instance.currentUser == null) {
+                                Navigator.push(
+                                  ctx,
+                                  MaterialPageRoute(
+                                    builder: (_) => const Login(),
+                                  ),
+                                );
+                              } else {
+                                launchSMS(ctx, phone);
+                              }
+                            },
+                            child: Icon(
+                              Icons.sms,
+                              size: h / 28,
+                              color: Colors.green,
+                            ),
+                          ),
+
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
