@@ -50,22 +50,30 @@
     Utilities                          intl (dates), responsive_design, custom_icons
 
 🔐 Authentication System
-    ✅ Sign Up / Login forms with complete field validation
-    💾 User credentials saved securely in localStorage
+    
+  ✅ Sign Up / Login forms with complete field validation
+    
+  💾 User credentials saved securely in localStorage
 
 🎞️ GIF Preview:
+
 Favourite & Weather Feature:
+
 ![Workflow GIF](https://i.imgflip.com/9ws9jf.gif)
 
 Buyer Login:
+
 ![Workflow GIF](https://i.imgflip.com/9ws9p9.gif)
 
 Whatsapp Feature:
+
 ![Workflow GIF](https://i.imgflip.com/9ws9uz.gif)
 
 Seller Page:
+
 ![Workflow GIF](https://i.imgflip.com/9ws9wn.gif)
 
 In App chat Feature:
+
 ![Workflow GIF](https://i.imgflip.com/9ws9z7.gif)
 
