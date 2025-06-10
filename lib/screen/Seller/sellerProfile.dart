@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:signup_login_page/screen/login.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:signup_login_page/screen/home.dart';
 import 'package:signup_login_page/screen/Seller/sellerEditProfilePage.dart';
 
 class SellerProfile extends StatefulWidget {
@@ -16,6 +18,8 @@ class _SellerProfileState extends State<SellerProfile> {
   String sellerRole = "";
   String sellerNumber = "";
   String sellerPincode = "";
+  String? profileImageUrl;
+
   bool isLoading = true;
 
   @override
@@ -24,108 +28,247 @@ class _SellerProfileState extends State<SellerProfile> {
     _getSellerDetails();
   }
 
+  Future<void> _pickAndUploadImage() async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return;
+
+    try {
+      final picked = await ImagePicker().pickImage(source: ImageSource.gallery);
+      if (picked == null) return;
+
+      final bytes = await picked.readAsBytes();
+      final fileName =
+          'profile_${user.uid}_${DateTime.now().millisecondsSinceEpoch}.jpg';
+
+      final supabase = Supabase.instance.client;
+      await supabase.storage
+          .from('user-images')
+          .uploadBinary(
+            fileName,
+            bytes,
+            fileOptions: const FileOptions(contentType: 'image/jpeg'),
+          );
+
+      final imageUrl = supabase.storage
+          .from('user-images')
+          .getPublicUrl(fileName);
+
+      await FirebaseFirestore.instance.collection('users').doc(user.uid).update(
+        {'profileImage': imageUrl},
+      );
+
+      setState(() {
+        profileImageUrl = imageUrl;
+      });
+    } catch (e) {
+      print('Image upload error: $e');
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Failed to upload image')));
+    }
+  }
+
   Future<void> _getSellerDetails() async {
-    User? user = FirebaseAuth.instance.currentUser;
-
+    final user = FirebaseAuth.instance.currentUser;
     if (user != null) {
-      var userDoc = FirebaseFirestore.instance
-          .collection('users')
-          .doc(user.uid);
-      var docSnapshot = await userDoc.get();
-
-      if (docSnapshot.exists) {
+      final doc =
+          await FirebaseFirestore.instance
+              .collection('users')
+              .doc(user.uid)
+              .get();
+      if (doc.exists) {
+        final data = doc.data();
         setState(() {
-          sellerName = docSnapshot['name'] ?? 'No Name';
-          sellerEmail = docSnapshot['email'] ?? 'No Email';
-          sellerAddress = docSnapshot['address'] ?? 'No Address';
-          sellerRole = docSnapshot['userType'] ?? 'No Role';
-          sellerNumber = docSnapshot['phoneNumber'] ?? 'No Number';
-          sellerPincode = docSnapshot['pincode'] ?? 'No Pincode';
+          sellerName = data?['name'] ?? '';
+          sellerEmail = data?['email'] ?? '';
+          sellerAddress = data?['address'] ?? '';
+          sellerRole = data?['userType'] ?? '';
+          sellerNumber = data?['phoneNumber'] ?? '';
+          sellerPincode = data?['pincode'] ?? '';
+          profileImageUrl = data?['profileImage'];
           isLoading = false;
         });
       } else {
-        setState(() {
-          isLoading = false;
-        });
-        print("No data found for this seller.");
+        setState(() => isLoading = false);
+        print("Seller data not found.");
       }
     } else {
-      setState(() {
-        isLoading = false;
-      });
-      print("No user is logged in.");
+      setState(() => isLoading = false);
+      print("No user signed in.");
     }
+  }
+
+  Widget buildInfoTile(String label, String value, IconData icon) {
+            final colorScheme = Theme.of(context).colorScheme;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8.0),
+      child: Row(
+        children: [
+          Icon(icon, color: colorScheme.primary),
+          SizedBox(width: 10),
+          Expanded(
+            child: RichText(
+              text: TextSpan(
+                children: [
+                  TextSpan(
+                    text: "$label: ",
+                    style: TextStyle(
+                      fontSize: 18,
+                      color: isDark ? Colors.white : Colors.black,
+                      fontWeight: FontWeight.w400,
+                    ),
+                  ),
+                  TextSpan(
+                    text: value,
+                    style: const TextStyle(fontSize: 18, color: Colors.blue),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+        final colorScheme = Theme.of(context).colorScheme;
+
     return Scaffold(
+      backgroundColor: isDark ? Colors.black : Color(0xFFF7FFF7),
       appBar: AppBar(
-        backgroundColor: Color.fromARGB(255, 47, 138, 47),
-        title: Text("Your Profile"),
+                iconTheme: IconThemeData(color: colorScheme.onPrimary),
+
+        title: Text("Profile",
+          style: TextStyle(color: colorScheme.onPrimary),
+        ),
+        backgroundColor: colorScheme.primary,
+        elevation: 2,
       ),
       body:
           isLoading
-              ? Center(child: CircularProgressIndicator())
-              : Padding(
-                padding: const EdgeInsets.all(20.0),
+              ? const Center(child: CircularProgressIndicator())
+              : SingleChildScrollView(
+                padding: const EdgeInsets.all(20),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Icon(Icons.account_circle, size: 50),
-                    SizedBox(height: 20),
-                    Text(
-                      "Welcome, $sellerName!",
-                      style: TextStyle(
-                        fontSize: 24,
-                        fontWeight: FontWeight.bold,
+                    AnimatedContainer(
+                      duration: const Duration(milliseconds: 600),
+                      curve: Curves.easeInOut,
+                      alignment: Alignment.center,
+                      child: Column(
+                        children: [
+                          Stack(
+                            alignment: Alignment.bottomRight,
+                            children: [
+                              CircleAvatar(
+                                radius: 50,
+                                backgroundColor: Colors.green.shade100,
+                                backgroundImage:
+                                    profileImageUrl != null
+                                        ? NetworkImage(profileImageUrl!)
+                                        : null,
+                                child:
+                                    profileImageUrl == null
+                                        ? Icon(
+                                          Icons.person,
+                                          size: 50,
+                                          color: Colors.green.shade700,
+                                        )
+                                        : null,
+                              ),
+                              Positioned(
+                                bottom: 0,
+                                right: 4,
+                                child: InkWell(
+                                  onTap: _pickAndUploadImage,
+                                  child: Container(
+                                    padding: const EdgeInsets.all(6),
+                                    decoration: BoxDecoration(
+                                      color: Colors.white,
+                                      shape: BoxShape.circle,
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: Colors.black26,
+                                          blurRadius: 3,
+                                        ),
+                                      ],
+                                    ),
+                                    child: const Icon(
+                                      Icons.edit,
+                                      color: Colors.blue,
+                                      size: 20,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 15),
+                          RichText(
+                            text: TextSpan(
+                              children: [
+                                const TextSpan(
+                                  text: 'Welcome, ',
+                                  style: TextStyle(
+                                    fontSize: 22,
+                                    fontWeight: FontWeight.w600,
+                                    color: Colors.grey,
+                                  ),
+                                ),
+                                TextSpan(
+                                  text: sellerName,
+                                  style: const TextStyle(
+                                    color: Colors.red,
+                                    fontSize: 22,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
                       ),
                     ),
-                    SizedBox(height: 20),
+                    const SizedBox(height: 30),
                     Card(
-                      elevation: 4,
+                      elevation: 6,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(15),
+                      ),
                       child: Padding(
-                        padding: const EdgeInsets.all(12.0),
+                        padding: const EdgeInsets.all(18.0),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(
-                              "Email: $sellerEmail",
-                              style: TextStyle(fontSize: 18),
+                            buildInfoTile("Email", sellerEmail, Icons.email),
+                            buildInfoTile("Phone", sellerNumber, Icons.phone),
+                            buildInfoTile("Address", sellerAddress, Icons.home),
+                            buildInfoTile(
+                              "Pincode",
+                              sellerPincode,
+                              Icons.location_on,
                             ),
-                            SizedBox(height: 10),
-                            Text(
-                              "Phone: $sellerNumber",
-                              style: TextStyle(fontSize: 18),
-                            ),
-                            SizedBox(height: 10),
-                            Text(
-                              "Address: $sellerAddress",
-                              style: TextStyle(fontSize: 18),
-                            ),
-                            SizedBox(height: 10),
-                            Text(
-                              "Pincode: $sellerPincode",
-                              style: TextStyle(fontSize: 18),
-                            ),
-                            SizedBox(height: 10),
-                            
-                            Text(
-                              "Role: $sellerRole",
-                              style: TextStyle(fontSize: 18),
+                            buildInfoTile(
+                              "Role",
+                              sellerRole,
+                              Icons.work_outline,
                             ),
                           ],
                         ),
                       ),
                     ),
-                    SizedBox(height: 30),
-                    ElevatedButton(
+                    const SizedBox(height: 30),
+                    ElevatedButton.icon(
                       style: ElevatedButton.styleFrom(
+                        backgroundColor: colorScheme.primary,
                         foregroundColor: Colors.white,
-                        backgroundColor: Color.fromARGB(255, 47, 138, 47),
-                        shadowColor: Colors.black,
                         elevation: 8,
-                        padding: EdgeInsets.symmetric(
+                        padding: const EdgeInsets.symmetric(
                           horizontal: 25,
                           vertical: 15,
                         ),
@@ -133,44 +276,48 @@ class _SellerProfileState extends State<SellerProfile> {
                           borderRadius: BorderRadius.circular(15),
                         ),
                       ),
+                      icon:  Icon(Icons.edit,color:colorScheme.onPrimary ,),
+                      label: Text("Edit Details",
+                        style: TextStyle(color: colorScheme.onPrimary),
+                      ),
                       onPressed: () {
                         Navigator.push(
                           context,
                           MaterialPageRoute(
                             builder: (context) => EditSellerProfileScreen(),
                           ),
-                        ).then((_) {
-                          _getSellerDetails(); // Refresh after edit
-                        });
+                        ).then((_) => _getSellerDetails());
                       },
-                      child: Text("Edit Details"),
                     ),
-                    Spacer(), // Pushes the Logout button to the bottom
-                    TextButton(
-                      onPressed: () {
-                        FirebaseAuth.instance.signOut();
-                        Navigator.pushReplacement(
-                          context,
-                          MaterialPageRoute(builder: (context) => Login()),
-                        );
-                      },
-                      style: TextButton.styleFrom(
-                        foregroundColor: Colors.white,
-                        backgroundColor: Colors.red,
-                        padding: EdgeInsets.symmetric(
-                          horizontal: 20,
-                          vertical: 10,
+                    const SizedBox(height: 30),
+                    Center(
+                      child: TextButton.icon(
+                        icon: const Icon(Icons.logout),
+                        style: TextButton.styleFrom(
+                          backgroundColor: Colors.red,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 20,
+                            vertical: 10,
+                          ),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10),
+                          ),
                         ),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10),
+                        label: const Text(
+                          "Log Out",
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
-                      ),
-                      child: Text(
-                        "Log Out",
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                        ),
+                        onPressed: () {
+                          FirebaseAuth.instance.signOut();
+                          Navigator.pushReplacement(
+                            context,
+                            MaterialPageRoute(builder: (context) => HomePage()),
+                          );
+                        },
                       ),
                     ),
                   ],
